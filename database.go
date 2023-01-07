@@ -180,6 +180,42 @@ func (database *Database) Find(ctx context.Context, doc any, sort *Sort, filter 
 	}
 }
 
+// FindMany returns in a collection based on filter and sort parameters, and returns
+// an iteratable cursor to the result set. If more than one filter expression is provided,
+// they are ANDed together
+func (database *Database) FindMany(ctx context.Context, collection any, sort *Sort, filter ...*Filter) (*Cursor, error) {
+	// Obtain the collection name
+	name, err := collectionNameFromStruct(reflect.TypeOf(collection))
+	if err != nil {
+		return nil, err
+	}
+
+	// Do the find
+	cursor, err := database.Collection(name).Find(ctx, and(filter...), &options.FindOptions{
+		Sort: sort.doc(),
+	})
+	if err != nil {
+		return nil, err
+	} else {
+		return newCursor(cursor), nil
+	}
+}
+
+// Update a single document in a collection, and returns number of documents matched and modified
+func (database *Database) Update(ctx context.Context, update any, filter ...*Filter) (int64, int64, error) {
+	// Obtain the collection name
+	name, err := collectionNameFromStruct(reflect.TypeOf(update))
+	if err != nil {
+		return -1, -1, err
+	}
+
+	if result, err := database.Collection(name).UpdateOne(ctx, and(filter...), bson.D{{"$set", update}}, &options.UpdateOptions{}); err != nil {
+		return -1, -1, err
+	} else {
+		return result.MatchedCount, result.ModifiedCount, nil
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 

@@ -212,6 +212,59 @@ func (client *Client) Find(ctx context.Context, doc any, sort *Sort, filter ...*
 	}
 }
 
+// FindMany returns in a collection based on filter and sort parameters, and returns
+// an iteratable cursor to the result set. If more than one filter expression is provided,
+// they are ANDed together
+func (client *Client) FindMany(ctx context.Context, collection any, sort *Sort, filter ...*Filter) (*Cursor, error) {
+	db := client.Database()
+	if db == nil {
+		return nil, ErrBadParameter.With("database not selected")
+	} else {
+		return db.FindMany(ctx, collection, sort, filter...)
+	}
+}
+
+// Update a single document in a collection, and returns number of documents matched and modified
+func (client *Client) Update(ctx context.Context, update any, filter ...*Filter) (int64, int64, error) {
+	db := client.Database()
+	if db == nil {
+		return -1, -1, ErrBadParameter.With("database not selected")
+	} else {
+		return db.Update(ctx, update, filter...)
+	}
+}
+
+// Do executes a series of statements within a transaction, and commits or rolls back
+// depending on error returned
+func (client *Client) Do(ctx context.Context, fn func(context.Context) error) error {
+	session, err := client.StartSession(&options.SessionOptions{})
+	if err != nil {
+		return err
+	}
+	defer session.EndSession(ctx)
+
+	// Perform operations within a transaction
+	if err := session.StartTransaction(&options.TransactionOptions{}); err != nil {
+		return err
+	}
+
+	// Commit or rollback
+	var result error
+	if err := fn(ctx); err != nil {
+		result = multierror.Append(result, err)
+		if err := session.AbortTransaction(ctx); err != nil {
+			result = multierror.Append(result, err)
+		}
+	} else {
+		if err := session.CommitTransaction(ctx); err != nil {
+			result = multierror.Append(result, err)
+		}
+	}
+
+	// Return any errors
+	return result
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 

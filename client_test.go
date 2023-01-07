@@ -2,6 +2,7 @@ package mongodb_test
 
 import (
 	"context"
+	"io"
 	"testing"
 	"time"
 
@@ -148,4 +149,73 @@ func Test_Client_007(t *testing.T) {
 	err = c.Find(ctx, &doc, nil, mongodb.F().EqualsId(key))
 	assert.NoError(err)
 	assert.Equal(doc.Id, key)
+}
+
+func Test_Client_008(t *testing.T) {
+	assert := assert.New(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	c, err := mongodb.New(ctx, uri, mongodb.OptDatabase("test"))
+	assert.NoError(err)
+	assert.NotNil(c)
+	defer c.Close()
+
+	type Doc struct {
+		Id string `bson:"_id,omitempty"`
+	}
+	var doc Doc
+
+	// Insert a document into the database
+	num, err := c.InsertMany(ctx, &doc, &doc)
+	assert.NoError(err)
+	assert.Len(num, 2)
+
+	// Find the documents in the database
+	cursor, err := c.FindMany(ctx, Doc{}, nil, nil)
+	assert.NoError(err)
+	assert.NotNil(cursor)
+	for {
+		if err := cursor.Next(ctx, &doc); err == io.EOF {
+			break
+		} else if err != nil {
+			assert.NoError(err)
+		}
+		t.Log(doc)
+	}
+}
+
+func Test_Client_009(t *testing.T) {
+	assert := assert.New(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	c, err := mongodb.New(ctx, uri, mongodb.OptDatabase("test"))
+	assert.NoError(err)
+	assert.NotNil(c)
+	defer c.Close()
+
+	type Doc struct {
+		Id    string `bson:"_id,omitempty"`
+		Value string `bson:"value,omitempty"`
+	}
+	doc := Doc{Value: "test"}
+
+	// Insert a document into the database
+	key, err := c.Insert(ctx, &doc)
+	assert.NoError(err)
+	assert.NotEmpty(key)
+
+	// Retrieve the document from the database
+	err = c.Find(ctx, &doc, nil, mongodb.F().EqualsId(key))
+	assert.NoError(err)
+
+	// Update the document in the database
+	doc.Id = ""
+	doc.Value = "updated"
+	matched, modified, err := c.Update(ctx, &doc, mongodb.F().EqualsId(key))
+	assert.NoError(err)
+	assert.Equal(int64(1), matched)
+	assert.Equal(int64(1), modified)
+
 }
