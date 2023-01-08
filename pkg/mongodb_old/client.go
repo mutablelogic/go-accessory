@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	// Packages
@@ -26,6 +27,9 @@ type Client struct {
 	// Database mapping. The default database is stored
 	// as an empty string
 	db map[string]*Database
+
+	// Collection name mapping.
+	col map[reflect.Type]string
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -40,7 +44,7 @@ const (
 // LIFECYCLE
 
 // Connect to MongoDB server
-func New(ctx context.Context, url string, opts ...ClientOpt) (*Client, error) {
+func Open(ctx context.Context, url string, opts ...ClientOpt) (Client, error) {
 	client, err := driver.Connect(ctx, options.Client().ApplyURI(url))
 	if err != nil {
 		return nil, err
