@@ -103,8 +103,9 @@ type Cursor interface {
 
 // Filter represents a filter expression for a query
 type Filter interface {
-	// Match a document _id (hex)
-	ObjectId(string) error
+	// Match a document primary key. For MongoDB, this can be an ObjectID represented in HEX, or
+	// other string.
+	Key(string) error
 }
 
 // Sort represents a sort specification for a query
