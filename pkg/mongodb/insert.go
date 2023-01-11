@@ -47,16 +47,15 @@ func (collection *collection) Insert(ctx context.Context, doc ...any) error {
 	defer trace.Do(ctx, collection.traceFn, time.Now())
 
 	// Call one or many
+	var err error
 	switch len(doc) {
 	case 0:
 		return ErrBadParameter
 	case 1:
-		r, err := collection.insertOne(ctx, doc[0])
-		*modified = r
+		*modified, err = collection.insertOne(ctx, doc[0])
 		return err
 	default:
-		r, err := collection.insertMany(ctx, doc[0])
-		*modified = r
+		*modified, err = collection.insertMany(ctx, doc...)
 		return err
 	}
 }
