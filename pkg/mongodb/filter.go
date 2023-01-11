@@ -28,7 +28,7 @@ func NewFilter() *filter {
 ///////////////////////////////////////////////////////////////////////////////
 // PUBLIC METHODS
 
-func (filter *filter) ObjectId(v string) error {
+func (filter *filter) Key(v string) error {
 	if id, err := primitive.ObjectIDFromHex(v); err != nil {
 		return err
 	} else {

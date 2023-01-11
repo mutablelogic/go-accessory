@@ -33,9 +33,14 @@ type client struct {
 
 	// Collection mapping.
 	col map[reflect.Type]*collection
+
+	// Function to trace calls
+	tracefn fnTrace
 }
 
 var _ Client = (*client)(nil)
+
+type fnTrace func(context.Context, time.Duration)
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
@@ -63,6 +68,10 @@ func Open(ctx context.Context, url string, opts ...ClientOpt) (Client, error) {
 			return nil, err
 		}
 	}
+
+	// Trace
+	now := time.Now()
+	defer this.t(ctx, OpConnect, time.Since(now), url)
 
 	// Connect
 	clientOpts := []*options.ClientOptions{
@@ -100,6 +109,12 @@ func (client *client) Close() error {
 	// Disconnect with default timeout
 	ctx, cancel := context.WithTimeout(context.Background(), client.Timeout())
 	defer cancel()
+
+	// Trace
+	now := time.Now()
+	defer client.t(ctx, OpDisconnect, time.Since(now))
+
+	// Disconnect
 	if err := client.Disconnect(ctx); err != nil {
 		result = multierror.Append(result, err)
 	} else {
@@ -135,6 +150,12 @@ func (client *client) Ping(ctx context.Context) error {
 	if client.Client == nil {
 		return ErrOutOfOrder.With("Ping")
 	}
+
+	// Trace
+	now := time.Now()
+	defer client.t(ctx, OpPing, time.Since(now))
+
+	// Perform ping
 	return client.Client.Ping(c(ctx), readpref.Primary())
 }
 
@@ -208,6 +229,10 @@ func (client *client) Do(ctx context.Context, fn func(context.Context) error) er
 	}
 	defer session.EndSession(c(ctx))
 
+	// Trace
+	now := time.Now()
+	defer client.t(ctx, OpTransaction, time.Since(now))
+
 	// Perform operations within a transaction
 	if err := session.StartTransaction(&options.TransactionOptions{}); err != nil {
 		return err
@@ -251,12 +276,20 @@ func (client *client) Name() string {
 ///////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 
-// ctx always returns a context
+// c always returns a context
 func c(ctx context.Context) context.Context {
 	if ctx == nil {
 		return context.Background()
 	} else {
 		return ctx
+	}
+}
+
+// t is called to trace an operation
+func (client *client) t(ctx context.Context, op Operation, dur time.Duration, args ...string) {
+	if client.tracefn != nil {
+		// TODO: Append operation and arguments
+		client.tracefn(c(ctx), dur)
 	}
 }
 

@@ -7,6 +7,11 @@ import (
 )
 
 ///////////////////////////////////////////////////////////////////////////////
+// TYPES
+
+type Operation uint
+
+///////////////////////////////////////////////////////////////////////////////
 // INTERFACES
 
 // Client represents a connection to a database server. Open a connection to
@@ -26,6 +31,10 @@ import (
 // You can map a go struct intstance to a collection name:
 //
 //	clientopt := mongodb.WithCollection(any, string)
+//
+// and you can set up a trace function to record operation timings:
+//
+//	clientopt := mongodb.WithTrace(func(context.Context, time.Duration))
 type Client interface {
 	io.Closer
 
@@ -137,4 +146,59 @@ type Sort interface {
 
 	// Limit the number of documents returned
 	Limit(int64) error
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// CONSTANTS
+
+const (
+	OpNone Operation = iota
+	OpConnect
+	OpDisconnect
+	OpPing
+	OpTransaction
+	OpInsert
+	OpInsertMany
+	OpDelete
+	OpDeleteMany
+	OpFind
+	OpFindMany
+	OpUpdate
+	OpUpdateMany
+)
+
+///////////////////////////////////////////////////////////////////////////////
+// STRINGIFY
+
+func (o Operation) String() string {
+	switch o {
+	case OpNone:
+		return "OpNone"
+	case OpConnect:
+		return "OpConnect"
+	case OpDisconnect:
+		return "OpDisconnect"
+	case OpPing:
+		return "OpPing"
+	case OpTransaction:
+		return "OpTransaction"
+	case OpInsert:
+		return "OpInsert"
+	case OpInsertMany:
+		return "OpInsertMany"
+	case OpDelete:
+		return "OpDelete"
+	case OpDeleteMany:
+		return "OpDeleteMany"
+	case OpFind:
+		return "OpFind"
+	case OpFindMany:
+		return "OpFindMany"
+	case OpUpdate:
+		return "OpUpdate"
+	case OpUpdateMany:
+		return "OpUpdateMany"
+	default:
+		return "[?? Invalid Operation value]"
+	}
 }
