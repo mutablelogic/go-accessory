@@ -6,7 +6,7 @@ import (
 	primitive "go.mongodb.org/mongo-driver/bson/primitive"
 
 	// Namespace imports
-	. "github.com/djthorpe/go-mongodb"
+	. "github.com/mutablelogic/go-accessory"
 )
 
 ///////////////////////////////////////////////////////////////////////////////

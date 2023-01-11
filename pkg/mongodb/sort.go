@@ -6,7 +6,7 @@ import (
 
 	// Namespace imports
 	. "github.com/djthorpe/go-errors"
-	. "github.com/djthorpe/go-mongodb"
+	. "github.com/mutablelogic/go-accessory"
 )
 
 ///////////////////////////////////////////////////////////////////////////////

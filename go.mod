@@ -1,4 +1,4 @@
-module github.com/djthorpe/go-mongodb
+module github.com/mutablelogic/go-accessory
 
 go 1.19
 

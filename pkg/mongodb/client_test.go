@@ -7,7 +7,7 @@ import (
 	"time"
 
 	// Packages
-	"github.com/djthorpe/go-mongodb/pkg/mongodb"
+	"github.com/mutablelogic/go-accessory/pkg/mongodb"
 	"github.com/stretchr/testify/assert"
 
 	// Namespace imports

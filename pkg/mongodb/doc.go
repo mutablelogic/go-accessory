@@ -1,6 +1,5 @@
 /*
-mongodb package provides a slightly higher level API for MongoDB than the official driver,
-although of course it builds on the official driver.
+The accessory package provides a high level API for go object storage in databases (MongoDB).
 
 # Documents
 

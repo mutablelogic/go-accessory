@@ -1,4 +1,4 @@
-package mongodb
+package accessory
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 ///////////////////////////////////////////////////////////////////////////////
 // INTERFACES
 
-// Client represents a connection to a MongoDB server. Open a connection to
+// Client represents a connection to a database server. Open a connection to
 // the client with
 //
 //	mongodb.Open(context.Context, string, ...ClientOpt) (Client, error)
