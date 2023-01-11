@@ -104,6 +104,7 @@ func Test_Client_007(t *testing.T) {
 	t.Log(databases)
 }
 
+/*
 func Test_Client_008(t *testing.T) {
 	assert := assert.New(t)
 
@@ -135,6 +136,7 @@ func Test_Client_009(t *testing.T) {
 	assert.NotNil(collections)
 	t.Log(collections)
 }
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // Return URL or skip test

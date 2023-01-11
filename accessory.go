@@ -41,7 +41,7 @@ type Client interface {
 	// You can call all database operations on the client instance, which will
 	// use the default database or return an error if no default database
 	// is set
-	//Database
+	Database
 
 	// Return the default timeout for the client
 	Timeout() time.Duration
@@ -74,21 +74,21 @@ type Client interface {
 type Database interface {
 	// Return the name of the database
 	Name() string
+	/*
+		// Return a collection object for a specific struct
+		Collection(any) Collection
 
-	// Return a collection object for a specific struct
-	Collection(any) Collection
+		// Return all existing collections in the database
+		Collections(context.Context) ([]Collection, error)
 
-	// Return all existing collections in the database
-	Collections(context.Context) ([]Collection, error)
+		// Insert a single document to the database and return key for the document
+		// represented as a string. The document key is updated if the document is
+		// writable.
+		Insert(context.Context, any) (string, error)
 
-	// Insert a single document to the database and return key for the document
-	// represented as a string. The document key is updated if the document is
-	// writable.
-	Insert(context.Context, any) (string, error)
-
-	// Insert many documents of the same type to the database and return keys for the documents.
-	// Documents are updated with their key if they are writable.
-	InsertMany(context.Context, ...any) ([]string, error)
+		// Insert many documents of the same type to the database and return keys for the documents.
+		// Documents are updated with their key if they are writable.
+		InsertMany(context.Context, ...any) ([]string, error)*/
 }
 
 type Collection interface {

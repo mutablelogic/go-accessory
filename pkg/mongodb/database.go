@@ -107,6 +107,11 @@ func (database *database) Insert(ctx context.Context, document any) (string, err
 	}
 }
 
+// Insert a single document to the database and return key for the document
+func (database *database) InsertMany(ctx context.Context, document ...any) ([]string, error) {
+	return nil, ErrNotImplemented
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 

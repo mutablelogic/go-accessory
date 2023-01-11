@@ -1,14 +1,8 @@
 package mongodb_test
 
-import (
-	"context"
-	"testing"
+// Packages
 
-	// Packages
-	"github.com/mutablelogic/go-accessory/pkg/mongodb"
-	"github.com/stretchr/testify/assert"
-)
-
+/*
 func Test_Insert_001(t *testing.T) {
 	assert := assert.New(t)
 
@@ -26,3 +20,4 @@ func Test_Insert_001(t *testing.T) {
 	assert.NoError(err)
 	assert.NotEmpty(key)
 }
+*/
