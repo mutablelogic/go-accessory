@@ -50,9 +50,6 @@ type Client interface {
 	// Return all existing databases on the server
 	Databases(context.Context) ([]Database, error)
 
-	// Return true if a database with given name exists
-	Exists(context.Context, string) bool
-
 	// Perform operations within a transaction. Rollback or apply
 	// changes to the database depending on error return.
 	Do(context.Context, func(context.Context) error) error
@@ -69,21 +66,16 @@ type Client interface {
 type Database interface {
 	// Return the name of the database
 	Name() string
-	/*
-		// Return a collection object for a specific struct
-		Collection(any) Collection
 
-		// Return all existing collections in the database
-		Collections(context.Context) ([]Collection, error)
+	// Return a collection object for a specific struct
+	Collection(any) Collection
 
-		// Insert a single document to the database and return key for the document
-		// represented as a string. The document key is updated if the document is
-		// writable.
-		Insert(context.Context, any) (string, error)
+	// Return all existing collections in the database
+	Collections(context.Context) ([]Collection, error)
 
-		// Insert many documents of the same type to the database and return keys for the documents.
-		// Documents are updated with their key if they are writable.
-		InsertMany(context.Context, ...any) ([]string, error)*/
+	// Insert documents of the same type to the database. The document key is updated
+	// if the document is writable.
+	Insert(context.Context, ...any) error
 }
 
 type Collection interface {

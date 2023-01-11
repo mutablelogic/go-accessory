@@ -107,24 +107,27 @@ func Test_Client_007(t *testing.T) {
 	databases, err := c.Databases(context.TODO())
 	assert.NoError(err)
 	assert.NotNil(databases)
-	t.Log(databases)
+	assert.NotEmpty(databases)
 }
 
-/*
 func Test_Client_008(t *testing.T) {
 	assert := assert.New(t)
 
 	// List Databases
-	c, err := mongodb.Open(context.TODO(), uri(t), mongodb.OptDatabase("admin"))
+	c, err := mongodb.Open(context.TODO(), uri(t), mongodb.OptDatabase("test"))
 	assert.NoError(err)
 	defer c.Close()
 
-	collections, err := c.Collections(context.TODO())
+	type Doc struct {
+		Name string `bson:"name"`
+	}
+
+	key, err := c.Insert(context.TODO(), Doc{Name: "Test"})
 	assert.NoError(err)
-	assert.NotNil(collections)
-	t.Log(collections)
+	assert.NotEmpty(key)
 }
 
+/*
 func Test_Client_009(t *testing.T) {
 	assert := assert.New(t)
 

@@ -1,7 +1,6 @@
 package mongodb
 
 import (
-	"reflect"
 	"time"
 
 	// Namespace Imports
@@ -51,10 +50,8 @@ func OptCollection(collection any, name string) ClientOpt {
 		}
 
 		// Create a new collection
-		if meta := NewMeta(reflect.TypeOf(collection), name); meta == nil {
-			return ErrBadParameter.Withf("Invalid collectionof type %T", collection)
-		} else {
-			client.col[meta.Type] = meta
+		if meta := client.registerProto(collection, name); meta == nil {
+			return ErrBadParameter.Withf("Invalid collection of type %T", collection)
 		}
 		return nil
 	}

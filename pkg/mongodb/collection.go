@@ -4,6 +4,7 @@ import (
 	"context"
 
 	// Package imports
+	driver "go.mongodb.org/mongo-driver/mongo"
 
 	// Namespace imports
 	. "github.com/djthorpe/go-errors"
@@ -14,18 +15,30 @@ import (
 // TYPES
 
 type collection struct {
-	name string
+	*driver.Collection
 }
 
 // Ensure *collection implements the Collection interface
 var _ Collection = (*collection)(nil)
 
 ///////////////////////////////////////////////////////////////////////////////
+// LIFECYCLE
+
+func NewCollection(database *driver.Database, name string) *collection {
+	return &collection{
+		Collection: database.Collection(name),
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // PUBLIC METHODS
 
 // Return the name of the collection
 func (collection *collection) Name() string {
-	return collection.name
+	if collection.Collection == nil {
+		return ""
+	}
+	return collection.Name()
 }
 
 // Delete zero or one documents and returns the number of deleted documents (which should be

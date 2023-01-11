@@ -7,8 +7,8 @@ import (
 
 	// Package imports
 
+	bson "go.mongodb.org/mongo-driver/bson"
 	driver "go.mongodb.org/mongo-driver/mongo"
-	options "go.mongodb.org/mongo-driver/mongo/options"
 
 	// Namespace imports
 	. "github.com/djthorpe/go-errors"
@@ -84,40 +84,29 @@ func (database *database) Collections(ctx context.Context) ([]Collection, error)
 	if database.Database == nil {
 		return nil, ErrOutOfOrder
 	}
-	// TODO
-	return nil, ErrNotImplemented
-	// return database.ListCollectionNames(c(ctx), bson.D{})
-}
 
-// Insert a single document to the database and return key for the document
-func (database *database) Insert(ctx context.Context, document any) (string, error) {
-	// Check for database
-	if database.Database == nil {
-		return "", ErrOutOfOrder
+	// Obtain collection names
+	names, err := database.ListCollectionNames(c(ctx), bson.D{})
+	if err != nil {
+		return nil, err
 	}
-	// Get collection, insert, update the document, then return the id
-	if collection, err := database.collection(document); err != nil {
-		return "", err
-	} else if result, err := collection.InsertOne(c(ctx), document, &options.InsertOneOptions{}); err != nil {
-		return "", err
-	} else if key, err := database.updateKey(document, result.InsertedID); err != nil {
-		return "", err
-	} else {
-		return key, nil
-	}
-}
 
-// Insert a single document to the database and return key for the document
-func (database *database) InsertMany(ctx context.Context, document ...any) ([]string, error) {
-	return nil, ErrNotImplemented
+	// Create collection objects
+	result := make([]Collection, 0, len(names))
+	for _, name := range names {
+		result = append(result, NewCollection(database.Database, name))
+	}
+
+	// Return success
+	return result, nil
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 
-// Return collection from the given document prototypes. All the prototypes
+// Return collection from the document prototypes. All the prototypes
 // should be of the same type.
-func (database *database) collection(proto ...any) (*driver.Collection, error) {
+func (database *database) collectionForProto(proto ...any) (*collection, error) {
 	if name := database.colFn(proto...); name == "" {
 		return nil, ErrBadParameter.With("Unable to determine collection name from prototype")
 	} else {

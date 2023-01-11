@@ -37,7 +37,7 @@ type client struct {
 	db map[string]*database
 
 	// Collection metadata mapping.
-	col map[reflect.Type]*meta
+	meta map[reflect.Type]*meta
 
 	// Function to trace calls
 	tracefn traceFunc
@@ -64,7 +64,7 @@ func Open(ctx context.Context, url *url.URL, opts ...ClientOpt) (Client, error) 
 	// Create client
 	this := new(client)
 	this.db = make(map[string]*database, 1)
-	this.col = make(map[reflect.Type]*meta, 1)
+	this.meta = make(map[reflect.Type]*meta, 1)
 	this.timeout = defaultTimeout
 	this.url = url
 
@@ -130,7 +130,7 @@ func (client *client) Close() error {
 
 	// Release resources
 	client.db = nil
-	client.col = nil
+	client.meta = nil
 
 	// Return any errors
 	return result
@@ -181,7 +181,7 @@ func (client *client) Database(v string) Database {
 	if client.db == nil {
 		return nil
 	} else if _, exists := client.db[v]; !exists {
-		client.db[v] = NewDatabase(client, v, client.collectionToName, client.updateDocumentWithKey)
+		client.db[v] = NewDatabase(client, v, client.protosToName, client.updateDocumentWithKey)
 	}
 	return client.db[v]
 }
@@ -270,14 +270,6 @@ func (client *client) S() Sort {
 	return NewSort()
 }
 
-// Return the name of the default database, or empty string if none
-func (client *client) Name() string {
-	if db := client.Database(defaultDatabase); db != nil {
-		return db.Name()
-	}
-	return ""
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 
@@ -298,36 +290,57 @@ func t(ctx context.Context, fn traceFunc, since time.Time) {
 	}
 }
 
-func (client *client) protoToCollection(proto any) (*meta, reflect.Type) {
+// register a mapping from a prototype to a collection name
+func (client *client) registerProto(proto any, name string) *meta {
 	t := derefType(reflect.TypeOf(proto))
 	if t.Kind() != reflect.Struct {
-		return nil, t
+		return nil
 	}
-	if meta, exists := client.col[t]; exists {
-		return meta, t
+	if meta, exists := client.meta[t]; exists && meta.Name == name {
+		return meta
+	} else if meta := NewMeta(t, name); meta != nil {
+		client.meta[t] = meta
+		return meta
 	} else {
-		return nil, t
+		return nil
 	}
 }
 
-func (client *client) collectionToName(protos ...any) string {
+// return collection name from prototype
+func (client *client) protoToName(proto any) string {
+	t := derefType(reflect.TypeOf(proto))
+	if t.Kind() != reflect.Struct {
+		return emptyCollection
+	}
+	if meta, exists := client.meta[t]; exists {
+		return meta.Name
+	} else {
+		return t.Name()
+	}
+}
+
+// return metadata from prototype
+func (client *client) protoToMeta(proto any) *meta {
+	t := derefType(reflect.TypeOf(proto))
+	return client.meta[t]
+}
+
+// Return the name of a collection for identical prototypes
+func (client *client) protosToName(protos ...any) string {
 	// No protos = no way!
 	if len(protos) == 0 {
 		return emptyCollection
 	}
 
 	// Get name from collection or type
-	var name string
-	collection, t := client.protoToCollection(protos[0])
-	if collection != nil {
-		name = collection.Name
-	} else {
-		name = t.Name()
+	name := client.protoToName(protos[0])
+	if name == emptyCollection {
+		return emptyCollection
 	}
 
 	// Return emptyCollection if remaining protos are different
 	if len(protos) > 1 {
-		if otherName := client.collectionToName(protos[1:]...); otherName == emptyCollection || otherName != name {
+		if otherName := client.protosToName(protos[1:]...); otherName == emptyCollection || otherName != name {
 			return emptyCollection
 		}
 	}
@@ -338,11 +351,10 @@ func (client *client) collectionToName(protos ...any) string {
 
 func (client *client) updateDocumentWithKey(doc, key any) (string, error) {
 	// Get the collection from the document
-	collection, _ := client.protoToCollection(doc)
-	if collection == nil || collection.Key == nil {
+	meta := client.protoToMeta(doc)
+	if meta == nil || meta.Key == nil {
 		return "", ErrNotModified
 	}
-
 	// Set the key
-	return collection.SetKey(doc, key)
+	return meta.SetKey(doc, key)
 }
