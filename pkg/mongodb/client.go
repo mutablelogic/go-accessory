@@ -3,11 +3,13 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"reflect"
 	"time"
 
 	// Packages
 	multierror "github.com/hashicorp/go-multierror"
+	trace "github.com/mutablelogic/go-accessory/pkg/trace"
 	bson "go.mongodb.org/mongo-driver/bson"
 	driver "go.mongodb.org/mongo-driver/mongo"
 	options "go.mongodb.org/mongo-driver/mongo/options"
@@ -24,6 +26,9 @@ import (
 type client struct {
 	*driver.Client
 
+	// The URL used to connect
+	url *url.URL
+
 	// The default timeout
 	timeout time.Duration
 
@@ -35,12 +40,12 @@ type client struct {
 	col map[reflect.Type]*meta
 
 	// Function to trace calls
-	tracefn fnTrace
+	tracefn traceFunc
 }
 
 var _ Client = (*client)(nil)
 
-type fnTrace func(context.Context, time.Duration)
+type traceFunc func(context.Context, time.Duration)
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
@@ -55,12 +60,13 @@ const (
 // LIFECYCLE
 
 // Connect to MongoDB server
-func Open(ctx context.Context, url string, opts ...ClientOpt) (Client, error) {
+func Open(ctx context.Context, url *url.URL, opts ...ClientOpt) (Client, error) {
 	// Create client
 	this := new(client)
 	this.db = make(map[string]*database, 1)
 	this.col = make(map[reflect.Type]*meta, 1)
 	this.timeout = defaultTimeout
+	this.url = url
 
 	// Apply the client options BEFORE we connect
 	for _, opt := range opts {
@@ -69,13 +75,15 @@ func Open(ctx context.Context, url string, opts ...ClientOpt) (Client, error) {
 		}
 	}
 
+	// Ensure context is not nil
+	ctx = c(ctx)
+
 	// Trace
-	now := time.Now()
-	defer this.t(ctx, OpConnect, time.Since(now), url)
+	defer t(trace.WithUrl(ctx, trace.OpConnect, url), this.tracefn, time.Now())
 
 	// Connect
 	clientOpts := []*options.ClientOptions{
-		options.Client().ApplyURI(url),
+		options.Client().ApplyURI(url.String()),
 		options.Client().SetConnectTimeout(this.timeout),
 		options.Client().SetTimeout(this.timeout),
 	}
@@ -111,8 +119,7 @@ func (client *client) Close() error {
 	defer cancel()
 
 	// Trace
-	now := time.Now()
-	defer client.t(ctx, OpDisconnect, time.Since(now))
+	defer t(trace.WithUrl(ctx, trace.OpDisconnect, client.url), client.tracefn, time.Now())
 
 	// Disconnect
 	if err := client.Disconnect(ctx); err != nil {
@@ -152,8 +159,7 @@ func (client *client) Ping(ctx context.Context) error {
 	}
 
 	// Trace
-	now := time.Now()
-	defer client.t(ctx, OpPing, time.Since(now))
+	defer t(trace.WithUrl(ctx, trace.OpPing, client.url), client.tracefn, time.Now())
 
 	// Perform ping
 	return client.Client.Ping(c(ctx), readpref.Primary())
@@ -229,9 +235,8 @@ func (client *client) Do(ctx context.Context, fn func(context.Context) error) er
 	}
 	defer session.EndSession(c(ctx))
 
-	// Trace
-	now := time.Now()
-	defer client.t(ctx, OpTransaction, time.Since(now))
+	// Add a transaction counter to the context
+	ctx = trace.WithTx(c(ctx))
 
 	// Perform operations within a transaction
 	if err := session.StartTransaction(&options.TransactionOptions{}); err != nil {
@@ -285,11 +290,11 @@ func c(ctx context.Context) context.Context {
 	}
 }
 
-// t is called to trace an operation
-func (client *client) t(ctx context.Context, op Operation, dur time.Duration, args ...string) {
-	if client.tracefn != nil {
-		// TODO: Append operation and arguments
-		client.tracefn(c(ctx), dur)
+// t calls the trace function with a time delta
+func t(ctx context.Context, fn traceFunc, since time.Time) {
+	elapsed := time.Since(since).Truncate(time.Millisecond)
+	if fn != nil {
+		fn(ctx, elapsed)
 	}
 }
 

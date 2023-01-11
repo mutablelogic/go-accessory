@@ -2,12 +2,14 @@ package mongodb_test
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"testing"
 	"time"
 
 	// Packages
 	"github.com/mutablelogic/go-accessory/pkg/mongodb"
+	trace "github.com/mutablelogic/go-accessory/pkg/trace"
 	"github.com/stretchr/testify/assert"
 
 	// Namespace imports
@@ -28,7 +30,9 @@ func Test_Client_001(t *testing.T) {
 
 func Test_Client_002(t *testing.T) {
 	assert := assert.New(t)
-	c, err := mongodb.Open(context.TODO(), uri(t))
+	c, err := mongodb.Open(context.TODO(), uri(t), mongodb.OptTrace(func(ctx context.Context, delta time.Duration) {
+		t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", delta)
+	}))
 	assert.NoError(err)
 	defer c.Close()
 
@@ -94,7 +98,9 @@ func Test_Client_007(t *testing.T) {
 	assert := assert.New(t)
 
 	// List Databases
-	c, err := mongodb.Open(context.TODO(), uri(t))
+	c, err := mongodb.Open(context.TODO(), uri(t), mongodb.OptTrace(func(ctx context.Context, delta time.Duration) {
+		t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", delta)
+	}))
 	assert.NoError(err)
 	defer c.Close()
 
@@ -141,11 +147,13 @@ func Test_Client_009(t *testing.T) {
 ///////////////////////////////////////////////////////////////////////////////
 // Return URL or skip test
 
-func uri(t *testing.T) string {
+func uri(t *testing.T) *url.URL {
 	if uri := os.ExpandEnv(MONGO_URL); uri == "" {
 		t.Skip("no MONGO_URL environment variable, skipping test")
-		return ""
+	} else if uri, err := url.Parse(uri); err != nil {
+		t.Skip("invalid MONGO_URL environment variable, skipping test")
 	} else {
 		return uri
 	}
+	return nil
 }

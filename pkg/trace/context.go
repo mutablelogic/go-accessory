@@ -3,7 +3,8 @@ package trace
 import (
 	"context"
 	"fmt"
-	"runtime/internal/atomic"
+	"net/url"
+	"sync/atomic"
 	"time"
 )
 
@@ -14,38 +15,41 @@ type ctxKey uint
 
 type urlOp struct {
 	Op
-	url   string
-	delta time.Duration
+	url string
 }
 
 type colOp struct {
 	Op
 	database, collection string
-	delta                time.Duration
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 
 const (
-	ctxCol ctxKey = iota // Collection operation (update, find, ...)
-	ctxUrl               // URL operation (connect, disconnect and ping)
-	ctxTx                // Transaction number
+	ctxCol   ctxKey = iota // Collection operation (update, find, ...)
+	ctxUrl                 // URL operation (connect, disconnect and ping)
+	ctxTx                  // Transaction number
+	ctxDelta               // Delta time
 )
 
 ///////////////////////////////////////////////////////////////////////////////
 // PUBLIC METHODS
 
-func WithUrl(parent context.Context, op Op, url string, delta time.Duration) context.Context {
-	return context.WithValue(parent, ctxUrl, urlOp{op, url, delta})
+func WithUrl(parent context.Context, op Op, url *url.URL) context.Context {
+	return context.WithValue(parent, ctxUrl, urlOp{op, redactedUrl(url)})
 }
 
-func WithTx(parent context.Context, op Op, tx uint) context.Context {
+func WithTx(parent context.Context) context.Context {
 	return context.WithValue(parent, ctxTx, nextTx())
 }
 
+func WithDelta(parent context.Context, delta time.Duration) context.Context {
+	return context.WithValue(parent, ctxDelta, delta)
+}
+
 func WithCol(parent context.Context, op Op, database, collection string, delta time.Duration) context.Context {
-	return context.WithValue(parent, ctxCol, colOp{op, database, collection, delta})
+	return context.WithValue(parent, ctxCol, colOp{op, database, collection})
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,7 +62,6 @@ func DumpContextStr(ctx context.Context) string {
 	}
 	if url, ok := ctx.Value(ctxUrl).(urlOp); ok {
 		str += fmt.Sprintf(" op=%v url=%q", url.Op, url.url)
-		str += fmt.Sprint(" delta=", url.delta.Truncate(time.Millisecond))
 	}
 	if col, ok := ctx.Value(ctxCol).(colOp); ok {
 		str += fmt.Sprintf(" op=%v", col.Op)
@@ -68,7 +71,9 @@ func DumpContextStr(ctx context.Context) string {
 		if col.collection != "" {
 			str += fmt.Sprintf(" collection=%q", col.collection)
 		}
-		str += fmt.Sprint(" delta=", col.delta.Truncate(time.Millisecond))
+	}
+	if delta, ok := ctx.Value(ctxDelta).(time.Duration); ok && delta > 0 {
+		str += fmt.Sprint(" delta=", delta.Truncate(time.Millisecond))
 	}
 	return str + ">"
 }
@@ -76,9 +81,16 @@ func DumpContextStr(ctx context.Context) string {
 ///////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 
-var tx atomic.Uint64
+var tx uint64
 
 // Return a new transaction number
 func nextTx() uint64 {
-	return tx.Add(1)
+	return atomic.AddUint64(&tx, 1)
+}
+
+// Remove any usernames and passwords before printing out
+func redactedUrl(url *url.URL) string {
+	url_ := *url // make a copy
+	url_.User = nil
+	return url_.String()
 }

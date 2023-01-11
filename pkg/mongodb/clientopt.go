@@ -61,7 +61,7 @@ func OptCollection(collection any, name string) ClientOpt {
 }
 
 // Set the trace function
-func OptTrace(fn fnTrace) ClientOpt {
+func OptTrace(fn traceFunc) ClientOpt {
 	return func(client *client) error {
 		if client.Client == nil {
 			client.tracefn = fn

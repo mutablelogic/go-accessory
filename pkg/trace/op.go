@@ -13,7 +13,6 @@ const (
 	OpConnect
 	OpDisconnect
 	OpPing
-	OpTransaction
 	OpInsert
 	OpInsertMany
 	OpDelete
@@ -32,31 +31,29 @@ const (
 func (o Op) String() string {
 	switch o {
 	case OpNone:
-		return "OpNone"
+		return "None"
 	case OpConnect:
-		return "OpConnect"
+		return "Connect"
 	case OpDisconnect:
-		return "OpDisconnect"
+		return "Disconnect"
 	case OpPing:
-		return "OpPing"
-	case OpTransaction:
-		return "OpTransaction"
+		return "Ping"
 	case OpInsert:
-		return "OpInsert"
+		return "Insert"
 	case OpInsertMany:
-		return "OpInsertMany"
+		return "InsertMany"
 	case OpDelete:
-		return "OpDelete"
+		return "Delete"
 	case OpDeleteMany:
-		return "OpDeleteMany"
+		return "DeleteMany"
 	case OpFind:
-		return "OpFind"
+		return "Find"
 	case OpFindMany:
-		return "OpFindMany"
+		return "FindMany"
 	case OpUpdate:
-		return "OpUpdate"
+		return "Update"
 	case OpUpdateMany:
-		return "OpUpdateMany"
+		return "UpdateMany"
 	default:
 		return "[?? Invalid Operation value]"
 	}
