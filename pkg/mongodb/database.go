@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	// Package imports
-	bson "go.mongodb.org/mongo-driver/bson"
+
 	driver "go.mongodb.org/mongo-driver/mongo"
 	options "go.mongodb.org/mongo-driver/mongo/options"
 
@@ -73,12 +73,20 @@ func (database *database) Name() string {
 	}
 }
 
+// Return a collection
+func (database *database) Collection(proto any) Collection {
+	// TODO
+	return nil
+}
+
 // List the collections in the database
-func (database *database) Collections(ctx context.Context) ([]string, error) {
+func (database *database) Collections(ctx context.Context) ([]Collection, error) {
 	if database.Database == nil {
 		return nil, ErrOutOfOrder
 	}
-	return database.ListCollectionNames(c(ctx), bson.D{})
+	// TODO
+	return nil, ErrNotImplemented
+	// return database.ListCollectionNames(c(ctx), bson.D{})
 }
 
 // Insert a single document to the database and return key for the document

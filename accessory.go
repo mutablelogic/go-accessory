@@ -41,7 +41,7 @@ type Client interface {
 	// You can call all database operations on the client instance, which will
 	// use the default database or return an error if no default database
 	// is set
-	Database
+	//Database
 
 	// Return the default timeout for the client
 	Timeout() time.Duration

@@ -7,7 +7,7 @@ import (
 ///////////////////////////////////////////////////////////////////////////////
 // PUBLIC METHODS
 
-func (client *client) Collections(ctx context.Context) ([]string, error) {
+func (client *client) Collections(ctx context.Context) ([]Collection, error) {
 	return client.Database(defaultDatabase).Collections(ctx)
 }
 
