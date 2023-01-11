@@ -31,8 +31,8 @@ type client struct {
 	// as an empty string
 	db map[string]*database
 
-	// Collection mapping.
-	col map[reflect.Type]*collection
+	// Collection metadata mapping.
+	col map[reflect.Type]*meta
 
 	// Function to trace calls
 	tracefn fnTrace
@@ -59,7 +59,7 @@ func Open(ctx context.Context, url string, opts ...ClientOpt) (Client, error) {
 	// Create client
 	this := new(client)
 	this.db = make(map[string]*database, 1)
-	this.col = make(map[reflect.Type]*collection, 1)
+	this.col = make(map[reflect.Type]*meta, 1)
 	this.timeout = defaultTimeout
 
 	// Apply the client options BEFORE we connect
@@ -293,13 +293,13 @@ func (client *client) t(ctx context.Context, op Operation, dur time.Duration, ar
 	}
 }
 
-func (client *client) protoToCollection(proto any) (*collection, reflect.Type) {
+func (client *client) protoToCollection(proto any) (*meta, reflect.Type) {
 	t := derefType(reflect.TypeOf(proto))
 	if t.Kind() != reflect.Struct {
 		return nil, t
 	}
-	if collection, exists := client.col[t]; exists {
-		return collection, t
+	if meta, exists := client.col[t]; exists {
+		return meta, t
 	} else {
 		return nil, t
 	}

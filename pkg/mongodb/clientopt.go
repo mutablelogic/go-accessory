@@ -51,10 +51,10 @@ func OptCollection(collection any, name string) ClientOpt {
 		}
 
 		// Create a new collection
-		if collection := NewCollection(reflect.TypeOf(collection), name); collection == nil {
+		if meta := NewMeta(reflect.TypeOf(collection), name); meta == nil {
 			return ErrBadParameter.Withf("Invalid collectionof type %T", collection)
 		} else {
-			client.col[collection.Type] = collection
+			client.col[meta.Type] = meta
 		}
 		return nil
 	}
