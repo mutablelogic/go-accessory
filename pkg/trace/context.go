@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"sync/atomic"
-	"time"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -27,14 +26,18 @@ type colOp struct {
 // GLOBALS
 
 const (
-	ctxCol   ctxKey = iota // Collection operation (update, find, ...)
-	ctxUrl                 // URL operation (connect, disconnect and ping)
-	ctxTx                  // Transaction number
-	ctxDelta               // Delta time
+	ctxCol ctxKey = iota // Collection operation (update, find, ...)
+	ctxUrl               // URL operation (connect, disconnect and ping)
+	ctxTx                // Transaction number
+	ctxOp                // Operation (insert, update, delete, find, ...)
 )
 
 ///////////////////////////////////////////////////////////////////////////////
 // PUBLIC METHODS
+
+func WithOp(parent context.Context, op Op) context.Context {
+	return context.WithValue(parent, ctxOp, op)
+}
 
 func WithUrl(parent context.Context, op Op, url *url.URL) context.Context {
 	return context.WithValue(parent, ctxUrl, urlOp{op, redactedUrl(url)})
@@ -44,24 +47,17 @@ func WithTx(parent context.Context) context.Context {
 	return context.WithValue(parent, ctxTx, nextTx())
 }
 
-func WithDelta(parent context.Context, delta time.Duration) context.Context {
-	return context.WithValue(parent, ctxDelta, delta)
-}
-
-func WithCol(parent context.Context, op Op, database, collection string, delta time.Duration) context.Context {
+func WithCollection(parent context.Context, op Op, database, collection string) context.Context {
 	return context.WithValue(parent, ctxCol, colOp{op, database, collection})
 }
-
-///////////////////////////////////////////////////////////////////////////////
-// PUBLIC METHODS
 
 func DumpContextStr(ctx context.Context) string {
 	str := "<trace"
 	if tx, ok := ctx.Value(ctxTx).(uint64); ok {
 		str += fmt.Sprint(" tx=", tx)
 	}
-	if url, ok := ctx.Value(ctxUrl).(urlOp); ok {
-		str += fmt.Sprintf(" op=%v url=%q", url.Op, url.url)
+	if op, ok := ctx.Value(ctxOp).(Op); ok {
+		str += fmt.Sprintf(" op=%v", op)
 	}
 	if col, ok := ctx.Value(ctxCol).(colOp); ok {
 		str += fmt.Sprintf(" op=%v", col.Op)
@@ -71,9 +67,6 @@ func DumpContextStr(ctx context.Context) string {
 		if col.collection != "" {
 			str += fmt.Sprintf(" collection=%q", col.collection)
 		}
-	}
-	if delta, ok := ctx.Value(ctxDelta).(time.Duration); ok && delta > 0 {
-		str += fmt.Sprint(" delta=", delta.Truncate(time.Millisecond))
 	}
 	return str + ">"
 }

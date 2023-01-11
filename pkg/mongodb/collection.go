@@ -9,6 +9,7 @@ import (
 	// Namespace imports
 	. "github.com/djthorpe/go-errors"
 	. "github.com/mutablelogic/go-accessory"
+	trace "github.com/mutablelogic/go-accessory/pkg/trace"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -16,6 +17,9 @@ import (
 
 type collection struct {
 	*driver.Collection
+
+	meta    *meta
+	traceFn trace.Func
 }
 
 // Ensure *collection implements the Collection interface
@@ -24,9 +28,16 @@ var _ Collection = (*collection)(nil)
 ///////////////////////////////////////////////////////////////////////////////
 // LIFECYCLE
 
-func NewCollection(database *driver.Database, name string) *collection {
+func NewCollection(database *driver.Database, meta *meta, fn trace.Func) *collection {
+	// Check arguments
+	if database == nil || meta == nil {
+		return nil
+	}
+	// Return collection
 	return &collection{
-		Collection: database.Collection(name),
+		Collection: database.Collection(meta.Name),
+		meta:       meta,
+		traceFn:    fn,
 	}
 }
 

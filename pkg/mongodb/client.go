@@ -40,12 +40,10 @@ type client struct {
 	meta map[reflect.Type]*meta
 
 	// Function to trace calls
-	tracefn traceFunc
+	tracefn trace.Func
 }
 
 var _ Client = (*client)(nil)
-
-type traceFunc func(context.Context, time.Duration)
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
@@ -79,7 +77,7 @@ func Open(ctx context.Context, url *url.URL, opts ...ClientOpt) (Client, error) 
 	ctx = c(ctx)
 
 	// Trace
-	defer t(trace.WithUrl(ctx, trace.OpConnect, url), this.tracefn, time.Now())
+	defer trace.Do(trace.WithUrl(ctx, trace.OpConnect, url), this.tracefn, time.Now())
 
 	// Connect
 	clientOpts := []*options.ClientOptions{
@@ -119,7 +117,7 @@ func (client *client) Close() error {
 	defer cancel()
 
 	// Trace
-	defer t(trace.WithUrl(ctx, trace.OpDisconnect, client.url), client.tracefn, time.Now())
+	defer trace.Do(trace.WithUrl(ctx, trace.OpConnect, client.url), client.tracefn, time.Now())
 
 	// Disconnect
 	if err := client.Disconnect(ctx); err != nil {
@@ -159,7 +157,7 @@ func (client *client) Ping(ctx context.Context) error {
 	}
 
 	// Trace
-	defer t(trace.WithUrl(ctx, trace.OpPing, client.url), client.tracefn, time.Now())
+	defer trace.Do(trace.WithUrl(ctx, trace.OpPing, client.url), client.tracefn, time.Now())
 
 	// Perform ping
 	return client.Client.Ping(c(ctx), readpref.Primary())
@@ -181,7 +179,7 @@ func (client *client) Database(v string) Database {
 	if client.db == nil {
 		return nil
 	} else if _, exists := client.db[v]; !exists {
-		client.db[v] = NewDatabase(client, v, client.protosToName, client.updateDocumentWithKey)
+		client.db[v] = NewDatabase(client, v, client.protosToMeta, client.tracefn)
 	}
 	return client.db[v]
 }
@@ -246,11 +244,19 @@ func (client *client) Do(ctx context.Context, fn func(context.Context) error) er
 	// Commit or rollback
 	var result error
 	if err := fn(ctx); err != nil {
+		// Trace
+		defer trace.Do(trace.WithOp(ctx, trace.OpRollback), client.tracefn, time.Now())
+
+		// Rollback
 		result = multierror.Append(result, err)
 		if err := session.AbortTransaction(c(ctx)); err != nil {
 			result = multierror.Append(result, err)
 		}
 	} else {
+		// Trace
+		defer trace.Do(trace.WithOp(ctx, trace.OpCommit), client.tracefn, time.Now())
+
+		// Commit
 		if err := session.CommitTransaction(c(ctx)); err != nil {
 			result = multierror.Append(result, err)
 		}
@@ -282,14 +288,6 @@ func c(ctx context.Context) context.Context {
 	}
 }
 
-// t calls the trace function with a time delta
-func t(ctx context.Context, fn traceFunc, since time.Time) {
-	elapsed := time.Since(since).Truncate(time.Millisecond)
-	if fn != nil {
-		fn(ctx, elapsed)
-	}
-}
-
 // register a mapping from a prototype to a collection name
 func (client *client) registerProto(proto any, name string) *meta {
 	t := derefType(reflect.TypeOf(proto))
@@ -306,55 +304,33 @@ func (client *client) registerProto(proto any, name string) *meta {
 	}
 }
 
-// return collection name from prototype
-func (client *client) protoToName(proto any) string {
-	t := derefType(reflect.TypeOf(proto))
-	if t.Kind() != reflect.Struct {
-		return emptyCollection
-	}
-	if meta, exists := client.meta[t]; exists {
-		return meta.Name
-	} else {
-		return t.Name()
-	}
-}
-
 // return metadata from prototype
 func (client *client) protoToMeta(proto any) *meta {
 	t := derefType(reflect.TypeOf(proto))
 	return client.meta[t]
 }
 
-// Return the name of a collection for identical prototypes
-func (client *client) protosToName(protos ...any) string {
+// Return metadata from more than one prototype which
+// are all of the same type, or else return nil
+func (client *client) protosToMeta(protos ...any) *meta {
 	// No protos = no way!
 	if len(protos) == 0 {
-		return emptyCollection
+		return nil
 	}
 
 	// Get name from collection or type
-	name := client.protoToName(protos[0])
-	if name == emptyCollection {
-		return emptyCollection
+	meta := client.protoToMeta(protos[0])
+	if meta == nil {
+		return nil
 	}
 
 	// Return emptyCollection if remaining protos are different
 	if len(protos) > 1 {
-		if otherName := client.protosToName(protos[1:]...); otherName == emptyCollection || otherName != name {
-			return emptyCollection
+		if otherMeta := client.protosToMeta(protos[1:]...); otherMeta == nil || otherMeta != meta {
+			return nil
 		}
 	}
 
 	// Return success
-	return name
-}
-
-func (client *client) updateDocumentWithKey(doc, key any) (string, error) {
-	// Get the collection from the document
-	meta := client.protoToMeta(doc)
-	if meta == nil || meta.Key == nil {
-		return "", ErrNotModified
-	}
-	// Set the key
-	return meta.SetKey(doc, key)
+	return meta
 }

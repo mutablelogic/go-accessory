@@ -122,9 +122,8 @@ func Test_Client_008(t *testing.T) {
 		Name string `bson:"name"`
 	}
 
-	key, err := c.Insert(context.TODO(), Doc{Name: "Test"})
+	err = c.Insert(context.TODO(), Doc{Name: "Test"})
 	assert.NoError(err)
-	assert.NotEmpty(key)
 }
 
 /*

@@ -13,6 +13,8 @@ const (
 	OpConnect
 	OpDisconnect
 	OpPing
+	OpCommit
+	OpRollback
 	OpInsert
 	OpInsertMany
 	OpDelete
@@ -54,6 +56,10 @@ func (o Op) String() string {
 		return "Update"
 	case OpUpdateMany:
 		return "UpdateMany"
+	case OpCommit:
+		return "Commit"
+	case OpRollback:
+		return "Rollback"
 	default:
 		return "[?? Invalid Operation value]"
 	}

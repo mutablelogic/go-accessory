@@ -70,9 +70,6 @@ type Database interface {
 	// Return a collection object for a specific struct
 	Collection(any) Collection
 
-	// Return all existing collections in the database
-	Collections(context.Context) ([]Collection, error)
-
 	// Insert documents of the same type to the database. The document key is updated
 	// if the document is writable.
 	Insert(context.Context, ...any) error

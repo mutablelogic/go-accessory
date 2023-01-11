@@ -3,6 +3,9 @@ package mongodb
 import (
 	"time"
 
+	// Package imports
+	trace "github.com/mutablelogic/go-accessory/pkg/trace"
+
 	// Namespace Imports
 	. "github.com/djthorpe/go-errors"
 )
@@ -58,7 +61,7 @@ func OptCollection(collection any, name string) ClientOpt {
 }
 
 // Set the trace function
-func OptTrace(fn traceFunc) ClientOpt {
+func OptTrace(fn trace.Func) ClientOpt {
 	return func(client *client) error {
 		if client.Client == nil {
 			client.tracefn = fn

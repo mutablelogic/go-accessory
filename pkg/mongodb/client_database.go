@@ -18,11 +18,6 @@ func (client *client) Name() string {
 	return ""
 }
 
-// Return all existing collections in the default database
-func (client *client) Collections(ctx context.Context) ([]Collection, error) {
-	return client.Database(defaultDatabase).Collections(ctx)
-}
-
 // Return a collection in the default database
 func (client *client) Collection(proto any) Collection {
 	return client.Database(defaultDatabase).Collection(proto)
