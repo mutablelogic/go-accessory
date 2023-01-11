@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"errors"
+	"reflect"
 	"time"
 
 	// Namespace imports
@@ -21,8 +22,11 @@ func (database *database) Insert(ctx context.Context, doc ...any) error {
 		return ErrOutOfOrder
 	} else if len(doc) == 0 {
 		return ErrBadParameter
+	} else if c, ok := database.Collection(doc[0]).(*collection); !ok || c == nil {
+		t := derefType(reflect.TypeOf(doc[0]))
+		return ErrBadParameter.Withf("unknown collection for document of type %q", t.Name())
 	} else {
-		return database.Collection(doc[0]).(*collection).Insert(ctx, doc...)
+		return c.Insert(ctx, doc...)
 	}
 }
 
