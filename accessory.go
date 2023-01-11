@@ -15,11 +15,16 @@ import (
 //	mongodb.Open(context.Context, string, ...ClientOpt) (Client, error)
 //
 // which returns a client object. The client options can be used to set
-// the default database, timeout, and the mapping between structs and collection
-// names:
+// the default database:
 //
 //	clientopt := mongodb.WithDatabase(string)
+//
+// You can set the operation timeout using the following option:
+//
 //	clientopt := mongodb.WithTimeout(time.Duration)
+//
+// You can map a go struct intstance to a collection name:
+//
 //	clientopt := mongodb.WithCollection(any, string)
 type Client interface {
 	io.Closer
