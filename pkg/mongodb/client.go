@@ -117,7 +117,7 @@ func (client *client) Close() error {
 	defer cancel()
 
 	// Trace
-	defer trace.Do(trace.WithUrl(ctx, trace.OpConnect, client.url), client.tracefn, time.Now())
+	defer trace.Do(trace.WithUrl(ctx, trace.OpDisconnect, client.url), client.tracefn, time.Now())
 
 	// Disconnect
 	if err := client.Disconnect(ctx); err != nil {
@@ -266,6 +266,16 @@ func (client *client) Do(ctx context.Context, fn func(context.Context) error) er
 	return result
 }
 
+// Return a collection in the default database
+func (client *client) Collection(proto any) Collection {
+	return client.Database(defaultDatabase).Collection(proto)
+}
+
+// Return the name of the default database, or empty string if none
+func (client *client) Name() string {
+	return client.Database(defaultDatabase).Name()
+}
+
 // Return an empty filter specification
 func (client *client) F() Filter {
 	return NewFilter()
@@ -317,11 +327,20 @@ func (client *client) protosToMeta(protos ...any) *meta {
 	if len(protos) == 0 {
 		return nil
 	}
+	// Check for nil
+	if protos[0] == nil {
+		return nil
+	}
 
 	// Get name from collection or type
 	meta := client.protoToMeta(protos[0])
 	if meta == nil {
-		return nil
+		meta = NewMeta(reflect.TypeOf(protos[0]), "")
+		if meta == nil {
+			return nil
+		} else {
+			client.meta[meta.Type] = meta
+		}
 	}
 
 	// Return emptyCollection if remaining protos are different

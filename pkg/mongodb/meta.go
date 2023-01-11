@@ -51,6 +51,11 @@ func NewMeta(t reflect.Type, name string) *meta {
 		meta.Type = t
 	}
 
+	// Fix name
+	if meta.Name == "" {
+		meta.Name = t.Name()
+	}
+
 	// Find the field which is used as the primary key
 	fields := reflect.VisibleFields(t)
 	for _, field := range fields {

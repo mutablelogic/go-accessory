@@ -16,13 +16,18 @@ import (
 ///////////////////////////////////////////////////////////////////////////////
 // PUBLIC METHODS
 
+// Insert one or more documents into the default database
+func (client *client) Insert(ctx context.Context, doc ...any) error {
+	return client.Database(defaultDatabase).Insert(ctx, doc...)
+}
+
 // Insert one or more documents into the database
 func (database *database) Insert(ctx context.Context, doc ...any) error {
 	if database.Database == nil {
 		return ErrOutOfOrder
 	} else if len(doc) == 0 {
 		return ErrBadParameter
-	} else if c, ok := database.Collection(doc[0]).(*collection); !ok || c == nil {
+	} else if c := database.collectionForProtos(doc...); c == nil {
 		t := derefType(reflect.TypeOf(doc[0]))
 		return ErrBadParameter.Withf("unknown collection for document of type %q", t.Name())
 	} else {
@@ -37,44 +42,45 @@ func (collection *collection) Insert(ctx context.Context, doc ...any) error {
 		return ErrOutOfOrder
 	}
 
-	// Ensure ctx is not nil
-	ctx = c(ctx)
-
 	// Trace
-	trace.Do(trace.WithCollection(ctx, trace.OpInsert, collection.Database().Name(), collection.Name()), collection.traceFn, time.Now())
+	ctx, _, modified := trace.WithCollection(ctx, trace.OpInsert, collection.Database().Name(), collection.Name())
+	defer trace.Do(ctx, collection.traceFn, time.Now())
 
 	// Call one or many
 	switch len(doc) {
 	case 0:
 		return ErrBadParameter
 	case 1:
-		return collection.insertOne(ctx, doc[0])
+		r, err := collection.insertOne(ctx, doc[0])
+		*modified = r
+		return err
 	default:
-		return collection.insertMany(ctx, doc...)
+		r, err := collection.insertMany(ctx, doc[0])
+		*modified = r
+		return err
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 
-func (collection *collection) insertOne(ctx context.Context, doc any) error {
+func (collection *collection) insertOne(ctx context.Context, doc any) (int64, error) {
 	r, err := collection.Collection.InsertOne(ctx, doc, &options.InsertOneOptions{})
 	if err != nil {
-		return err
+		return -1, err
 	}
-	// Update document key
 	if _, err := collection.meta.SetKey(doc, r.InsertedID); !errors.Is(err, ErrNotModified) {
-		return err
+		return 1, err
 	} else {
-		return nil
+		return 1, nil
 	}
 }
 
-func (collection *collection) insertMany(ctx context.Context, doc ...any) error {
+func (collection *collection) insertMany(ctx context.Context, doc ...any) (int64, error) {
 	var result error
 	r, err := collection.Collection.InsertMany(ctx, doc, &options.InsertManyOptions{})
 	if err != nil {
-		return err
+		return int64(len(r.InsertedIDs)), err
 	}
 	for i, key := range r.InsertedIDs {
 		if _, err := collection.meta.SetKey(doc[i], key); err != nil && !errors.Is(err, ErrNotModified) {
@@ -82,5 +88,5 @@ func (collection *collection) insertMany(ctx context.Context, doc ...any) error 
 		}
 	}
 	// Return any errors
-	return result
+	return int64(len(r.InsertedIDs)), result
 }

@@ -62,8 +62,18 @@ func (database *database) Name() string {
 
 // Return a collection
 func (database *database) Collection(proto any) Collection {
-	// Get metadata for prototype
 	if meta := database.metaFn(proto); meta == nil {
+		return nil
+	} else {
+		return NewCollection(database.Database, meta, database.traceFn)
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// PRIVATE METHODS
+
+func (database *database) collectionForProtos(proto ...any) *collection {
+	if meta := database.metaFn(proto...); meta == nil {
 		return nil
 	} else {
 		return NewCollection(database.Database, meta, database.traceFn)

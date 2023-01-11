@@ -20,6 +20,7 @@ type urlOp struct {
 type colOp struct {
 	Op
 	database, collection string
+	matched, modified    int64
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -47,8 +48,10 @@ func WithTx(parent context.Context) context.Context {
 	return context.WithValue(parent, ctxTx, nextTx())
 }
 
-func WithCollection(parent context.Context, op Op, database, collection string) context.Context {
-	return context.WithValue(parent, ctxCol, colOp{op, database, collection})
+// Return a new context which contains matched and modified placeholders
+func WithCollection(parent context.Context, op Op, database, collection string) (context.Context, *int64, *int64) {
+	result := &colOp{op, database, collection, -1, -1}
+	return context.WithValue(parent, ctxCol, result), &result.matched, &result.modified
 }
 
 func DumpContextStr(ctx context.Context) string {
@@ -59,13 +62,22 @@ func DumpContextStr(ctx context.Context) string {
 	if op, ok := ctx.Value(ctxOp).(Op); ok {
 		str += fmt.Sprintf(" op=%v", op)
 	}
-	if col, ok := ctx.Value(ctxCol).(colOp); ok {
+	if url, ok := ctx.Value(ctxUrl).(urlOp); ok {
+		str += fmt.Sprintf(" op=%v url=%q", url.Op, url.url)
+	}
+	if col, ok := ctx.Value(ctxCol).(*colOp); ok {
 		str += fmt.Sprintf(" op=%v", col.Op)
 		if col.database != "" {
 			str += fmt.Sprintf(" database=%q", col.database)
 		}
 		if col.collection != "" {
 			str += fmt.Sprintf(" collection=%q", col.collection)
+		}
+		if col.matched >= 0 {
+			str += fmt.Sprintf(" matched=%d", col.matched)
+		}
+		if col.modified >= 0 {
+			str += fmt.Sprintf(" modified=%d", col.modified)
 		}
 	}
 	return str + ">"
