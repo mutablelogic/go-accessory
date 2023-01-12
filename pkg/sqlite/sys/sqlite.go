@@ -1,7 +1,6 @@
 package sqlite
 
 import (
-	"fmt"
 	"strings"
 )
 

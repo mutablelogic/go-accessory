@@ -1,14 +1,7 @@
 package sqlite
 
 import (
-	"fmt"
 	"unsafe"
-
-	// Modules
-	multierror "github.com/hashicorp/go-multierror"
-
-	// Import into namespace
-	. "github.com/djthorpe/go-errors"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
