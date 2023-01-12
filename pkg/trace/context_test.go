@@ -30,7 +30,7 @@ func Test_Context_001(t *testing.T) {
 	})
 	t.Run("003", func(t *testing.T) {
 		ctx := trace.WithTx(parent)
-		ctx = trace.WithCollection(ctx, trace.OpCommit, "db", "collection")
+		ctx, _, _ = trace.WithCollection(ctx, trace.OpCommit, "db", "collection")
 		t.Log(trace.DumpContextStr(ctx))
 	})
 }
