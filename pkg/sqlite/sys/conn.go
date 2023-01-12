@@ -34,10 +34,8 @@ func OpenPath(path string, flags OpenFlags, vfs string) (*Conn, error) {
 	var cVfs, cName *C.char
 	var c *C.sqlite3
 
-	// TODO: Look into logging later
-	//initFn.Do(func() {
-	//	C._sqlite3_config_logging(1)
-	//})
+	// Enable logging globally
+	initLogging()
 
 	// Check for thread safety
 	if C.sqlite3_threadsafe() == 0 {
