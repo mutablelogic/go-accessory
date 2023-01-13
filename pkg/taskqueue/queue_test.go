@@ -41,15 +41,18 @@ func Test_Queue_002(t *testing.T) {
 	queue := taskqueue.NewQueue(c, "test")
 	assert.NotNil(queue)
 
-	// Create a task
-	task, err := queue.New(context.TODO())
-	assert.NoError(err)
-	assert.NotNil(task)
+	// Create N tasks
+	for i := 0; i < 10; i++ {
+		task, err := queue.New(context.TODO(), Tag{Type: TaskPriority, Value: i})
+		assert.NoError(err)
+		assert.NotNil(task)
+		assert.NotEmpty(task.Key())
+		t.Log(i, "=>", task)
+	}
 
 	// Set the task priority
-	assert.NoError(task.Set(context.TODO(), Tag{TagPriority, 1}))
+	//assert.NoError(task.Set(context.TODO(), Tag{TagPriority, 1}))
 
-	t.Log(task)
 	assert.NoError(c.Close())
 }
 

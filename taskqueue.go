@@ -16,6 +16,11 @@ type Tag struct {
 	Value any
 }
 
+// TaskFunc is used for executing tasks. When an error is returned, the task
+// should be retried at some later date, or released if the error indicates
+// the task should not be retried.
+type TaskFunc func(context.Context, Task) error
+
 ///////////////////////////////////////////////////////////////////////////////
 // INTERFACES
 
@@ -27,8 +32,11 @@ type TaskQueue interface {
 	// Schedule a new task to be executed, and return it
 	New(context.Context, ...Tag) (Task, error)
 
-	// Retain the next task to be executed
-	Retain(context.Context) (Task, error)
+	// Set metadata tag values. Delete a tag if value set to nil
+	//Set(context.Context, Task, ...Tag) error
+
+	// Run the queue to retain tasks and execute them
+	Run(context.Context, TaskFunc) error
 }
 
 // Task represents a task
@@ -37,17 +45,8 @@ type Task interface {
 	Namespace() string // Return the namespace of the task
 	Tags() []Tag       // Return all metadata tags
 
-	// Set metadata tag values. Delete a tag if value set to nil
-	Set(context.Context, ...Tag) error
-
 	// Get a metadata tag value
-	Get(TagType) any
-
-	// Release a task. When the error is nil, the task is released from
-	// the task queue. When the error is non-nil, the task may be retried
-	// if it is less than the maximum task age. The error returned may
-	// indicate the task will not be retried.
-	Release(context.Context, error) error
+	//Get(TagType) any
 }
 
 ///////////////////////////////////////////////////////////////////////////////

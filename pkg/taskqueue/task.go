@@ -2,6 +2,7 @@ package taskqueue
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	// Namespace imports
@@ -26,6 +27,13 @@ type task struct {
 }
 
 var _ Task = (*task)(nil)
+
+///////////////////////////////////////////////////////////////////////////////
+// GLOBALS
+
+var (
+	reTagName = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]+$`)
+)
 
 ///////////////////////////////////////////////////////////////////////////////
 // LIFECYCLE
@@ -65,7 +73,18 @@ func (task *task) String() string {
 		str += fmt.Sprintf(" namespace=%q", task.Namespace_)
 	}
 	for _, tag := range task.Tags() {
-		str += fmt.Sprintf(" %s=%q", tag.Type, tag.Value)
+		switch v := tag.Value.(type) {
+		case string:
+			str += fmt.Sprintf(" %s=%q", tag.Type, v)
+		case time.Time:
+			if v.IsZero() {
+				str += fmt.Sprintf(" %s=nil", tag.Type)
+			} else {
+				str += fmt.Sprintf(" %s=%q", tag.Type, v.Format(time.RFC3339))
+			}
+		default:
+			str += fmt.Sprintf(" %s=%v", tag.Type, v)
+		}
 	}
 	return str + ">"
 }
@@ -125,7 +144,7 @@ func (task *task) set(key TagType, value any) error {
 			task.Priority_ = v
 			return nil
 		} else {
-			return ErrBadParameter.With("priority must be an integer value")
+			return ErrBadParameter.With("priority must be an int value")
 		}
 	case TaskExpiresAt:
 		if value == nil {
@@ -150,7 +169,9 @@ func (task *task) set(key TagType, value any) error {
 	case TaskRetryCount, TaskScheduledAt, TaskAge:
 		return ErrBadParameter.With("cannot set tag with type: ", key)
 	default:
-		if value == nil {
+		if !reTagName.MatchString(string(key)) {
+			return ErrBadParameter.Withf("invalid tag name %q", key)
+		} else if value == nil {
 			delete(task.Tags_, key)
 			return nil
 		} else if v, ok := value.(string); ok {

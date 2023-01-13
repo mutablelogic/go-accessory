@@ -23,7 +23,7 @@ type queue struct {
 	namespace string
 
 	// Retry backoff duration
-	retry_delta time.Duration
+	delta time.Duration
 }
 
 var _ TaskQueue = (*queue)(nil)
@@ -49,9 +49,9 @@ func NewQueueWithDelta(client Client, namespace string, delta time.Duration) Tas
 	queue.Client = client
 	queue.namespace = namespace
 	if delta == 0 {
-		queue.retry_delta = defaultRetryDelta
+		queue.delta = defaultRetryDelta
 	} else {
-		queue.retry_delta = delta
+		queue.delta = delta
 	}
 	return queue
 }
@@ -67,7 +67,7 @@ func (queue *queue) String() string {
 	if queue.namespace != "" {
 		str += fmt.Sprintf(" namespace=%q", queue.namespace)
 	}
-	str += fmt.Sprint(" retry_delta=", queue.retry_delta)
+	str += fmt.Sprint(" delta=", queue.delta)
 	return str + ">"
 }
 
@@ -78,8 +78,10 @@ func (queue *queue) String() string {
 func (queue *queue) New(ctx context.Context, tag ...Tag) (Task, error) {
 	var result error
 
-	// Set task and the tags for the task
+	// Create task
 	task := NewTask(queue.namespace)
+
+	// Set tags for the task, report any errors
 	for _, tag := range tag {
 		if err := task.set(tag.Type, tag.Value); err != nil {
 			result = multierror.Append(result, err)
@@ -89,6 +91,11 @@ func (queue *queue) New(ctx context.Context, tag ...Tag) (Task, error) {
 		return nil, result
 	}
 
+	// Set scheduled_at if not set
+	if task.ScheduledAt_.IsZero() {
+		task.ScheduledAt_ = task.CreatedAt_
+	}
+
 	// Store in the queue
 	if err := queue.Client.Insert(ctx, task); err != nil {
 		return nil, err
@@ -96,6 +103,28 @@ func (queue *queue) New(ctx context.Context, tag ...Tag) (Task, error) {
 
 	// Return success
 	return task, nil
+}
+
+func (queue *queue) Run(ctx context.Context, fn TaskFunc) error {
+	timer := time.NewTimer(0)
+	defer timer.Stop()
+
+	// Loop until cancelled
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-timer.C:
+			task, err := queue.Retain(ctx)
+			if err != nil {
+				return err
+			} else if task != nil {
+				err := fn(ctx, task)
+				fmt.Println("task result:", err)
+			}
+			timer.Reset(queue.delta)
+		}
+	}
 }
 
 // Retain the next task to be executed
