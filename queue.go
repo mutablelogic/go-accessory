@@ -41,12 +41,9 @@ type TaskQueue interface {
 
 // Task represents a task
 type Task interface {
-	//Key() string       // A unique identifier for the task
-	//Namespace() string // Return the namespace of the task
-	Tags() []Tag // Return all metadata tags
-
-	// Get a metadata tag value, or return nil
-	Get(TagType) any
+	Key() string       // A unique identifier for the task
+	Namespace() string // Return the namespace of the task
+	Tags() []Tag       // Return all metadata tags
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -54,6 +51,7 @@ type Task interface {
 
 const (
 	TaskPriority    TagType = "priority"     // int: The priority of the task (higher is more important)
+	TaskCreatedAt   TagType = "created_at"   // time.Time: The time the task was created
 	TaskScheduledAt TagType = "scheduled_at" // time.Time: The time the task is scheduled to be executed
 	TaskExpiresAt   TagType = "expires_at"   // time.Time: When the task expires (if not executed before this time)
 	TaskAge         TagType = "age"          // time.Duration: The maximum age of the task (how long it has been in the queue)
