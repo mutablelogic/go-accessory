@@ -30,8 +30,12 @@ func Test_Client_001(t *testing.T) {
 
 func Test_Client_002(t *testing.T) {
 	assert := assert.New(t)
-	c, err := mongodb.Open(context.TODO(), uri(t), mongodb.OptTrace(func(ctx context.Context, delta time.Duration) {
-		t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", delta)
+	c, err := mongodb.Open(context.TODO(), uri(t), mongodb.OptTrace(func(ctx context.Context, delta time.Duration, err error) {
+		if err != nil {
+			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", err)
+		} else {
+			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", delta)
+		}
 	}))
 	assert.NoError(err)
 	defer c.Close()
@@ -98,8 +102,12 @@ func Test_Client_007(t *testing.T) {
 	assert := assert.New(t)
 
 	// List Databases
-	c, err := mongodb.Open(context.TODO(), uri(t), mongodb.OptTrace(func(ctx context.Context, delta time.Duration) {
-		t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", delta)
+	c, err := mongodb.Open(context.TODO(), uri(t), mongodb.OptTrace(func(ctx context.Context, delta time.Duration, err error) {
+		if err != nil {
+			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", err)
+		} else {
+			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", delta)
+		}
 	}))
 	assert.NoError(err)
 	defer c.Close()

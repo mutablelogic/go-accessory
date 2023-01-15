@@ -23,8 +23,12 @@ func Test_Insert_001(t *testing.T) {
 	}
 
 	// List Databases
-	c, err := mongodb.Open(context.TODO(), uri(t), mongodb.OptDatabase("test"), mongodb.OptTrace(func(ctx context.Context, delta time.Duration) {
-		t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", delta)
+	c, err := mongodb.Open(context.TODO(), uri(t), mongodb.OptDatabase("test"), mongodb.OptTrace(func(ctx context.Context, delta time.Duration, err error) {
+		if err != nil {
+			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", err)
+		} else {
+			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", delta)
+		}
 	}))
 	assert.NoError(err)
 	defer c.Close()

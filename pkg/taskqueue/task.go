@@ -1,6 +1,7 @@
 package taskqueue
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -15,15 +16,15 @@ import (
 
 // task is a task in the queue
 type task struct {
-	Key_         string          `bson:"_id,omitempty"`
-	Namespace_   string          `bson:"namespace,omitempty"`
-	Priority_    int             `bson:"pri,omitempty"`
-	CreatedAt_   time.Time       `bson:"created_at,omitempty"`
-	ScheduledAt_ time.Time       `bson:"scheduled_at,omitempty"`
-	ExpiresAt_   time.Time       `bson:"expires_at,omitempty"`
-	RetryCount_  uint            `bson:"retry_count,omitempty"`
-	LastError_   string          `bson:"last_error,omitempty"`
-	Tags_        map[TagType]any `bson:"tags,omitempty"`
+	Id          string          `bson:"_id,omitempty"`
+	Name        string          `bson:"namespace,omitempty"`
+	Priority    int             `bson:"pri,omitempty"`
+	CreatedAt   time.Time       `bson:"created_at,omitempty"`
+	ScheduledAt time.Time       `bson:"scheduled_at,omitempty"`
+	ExpiresAt   time.Time       `bson:"expires_at,omitempty"`
+	RetryCount  uint            `bson:"retry_count,omitempty"`
+	LastError   string          `bson:"last_error,omitempty"`
+	Tag         map[TagType]any `bson:"tag,omitempty"`
 }
 
 var _ Task = (*task)(nil)
@@ -53,11 +54,11 @@ func NewTaskWithPriority(namespace string, priority int) *task {
 // should expire.
 func NewTaskWithPriorityAndExpiresAt(namespace string, priority int, expires_at time.Time) *task {
 	task := new(task)
-	task.Namespace_ = namespace
-	task.Priority_ = priority
-	task.CreatedAt_ = time.Now()
-	task.ExpiresAt_ = expires_at
-	task.Tags_ = make(map[TagType]any)
+	task.Name = namespace
+	task.Priority = priority
+	task.CreatedAt = time.Now()
+	task.ExpiresAt = expires_at
+	task.Tag = make(map[TagType]any)
 	return task
 }
 
@@ -66,11 +67,11 @@ func NewTaskWithPriorityAndExpiresAt(namespace string, priority int, expires_at 
 
 func (task *task) String() string {
 	str := "<taskqueue.task"
-	if task.Key_ != "" {
-		str += fmt.Sprintf(" key=%q", task.Key_)
+	if task.Id != "" {
+		str += fmt.Sprintf(" key=%q", task.Id)
 	}
-	if task.Namespace_ != "" {
-		str += fmt.Sprintf(" namespace=%q", task.Namespace_)
+	if task.Name != "" {
+		str += fmt.Sprintf(" namespace=%q", task.Name)
 	}
 	for _, tag := range task.Tags() {
 		switch v := tag.Value.(type) {
@@ -93,45 +94,76 @@ func (task *task) String() string {
 // PUBLIC METHODS
 
 func (task *task) Key() string {
-	return task.Key_
+	return task.Id
 }
 
 func (task *task) Namespace() string {
-	return task.Namespace_
+	return task.Name
 }
 
 func (task *task) Tags() []Tag {
 	var results []Tag
 	// Set priority
-	if task.Priority_ != 0 {
-		results = append(results, Tag{TaskPriority, task.Priority_})
+	if task.Priority != 0 {
+		results = append(results, Tag{TaskPriority, task.Priority})
 	}
 	// Get age
-	if !task.CreatedAt_.IsZero() {
-		results = append(results, Tag{TaskAge, time.Since(task.CreatedAt_).Truncate(time.Millisecond)})
+	if !task.CreatedAt.IsZero() {
+		results = append(results, Tag{TaskAge, time.Since(task.CreatedAt).Truncate(time.Millisecond)})
 	}
 	// ScheduledAt
-	if !task.ScheduledAt_.IsZero() {
-		results = append(results, Tag{TaskScheduledAt, task.ScheduledAt_})
+	if !task.ScheduledAt.IsZero() {
+		results = append(results, Tag{TaskScheduledAt, task.ScheduledAt})
 	}
 	// ExpiresAt
-	if !task.ExpiresAt_.IsZero() {
-		results = append(results, Tag{TaskExpiresAt, task.ExpiresAt_})
+	if !task.ExpiresAt.IsZero() {
+		results = append(results, Tag{TaskExpiresAt, task.ExpiresAt})
 	}
 	// RetryCount
-	if task.RetryCount_ != 0 {
-		results = append(results, Tag{TaskRetryCount, task.RetryCount_})
+	if task.RetryCount != 0 {
+		results = append(results, Tag{TaskRetryCount, task.RetryCount})
 	}
 	// LastError
-	if task.LastError_ != "" {
-		results = append(results, Tag{TaskLastError, task.LastError_})
+	if task.LastError != "" {
+		results = append(results, Tag{TaskLastError, errors.New(task.LastError)})
 	}
 	// Other Tags
-	for k, v := range task.Tags_ {
+	for k, v := range task.Tag {
 		results = append(results, Tag{k, v})
 	}
 	// Return tags
 	return results
+}
+
+func (task *task) Get(t TagType) any {
+	switch t {
+	case TaskPriority:
+		return task.Priority_
+	case TaskScheduledAt:
+		return task.ScheduledAt_
+	case TaskExpiresAt:
+		return task.ExpiresAt_
+	case TaskAge:
+		if task.CreatedAt_.IsZero() {
+			return nil
+		} else {
+			return time.Since(task.CreatedAt_).Truncate(time.Millisecond)
+		}
+	case TaskRetryCount:
+		return task.RetryCount_
+	case TaskLastError:
+		if task.LastError_ == "" {
+			return nil
+		} else {
+			return errors.New(task.LastError_)
+		}
+	default:
+		if value, ok := task.Tags_[t]; ok {
+			return value
+		} else {
+			return nil
+		}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

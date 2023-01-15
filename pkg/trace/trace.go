@@ -8,7 +8,7 @@ import (
 ///////////////////////////////////////////////////////////////////////////////
 // TYPES
 
-type Func func(context.Context, time.Duration)
+type Func func(context.Context, time.Duration, error)
 
 ///////////////////////////////////////////////////////////////////////////////
 // PUBLIC METHODS
@@ -17,6 +17,13 @@ type Func func(context.Context, time.Duration)
 func Do(ctx context.Context, fn Func, since time.Time) {
 	elapsed := time.Since(since).Truncate(time.Millisecond)
 	if fn != nil {
-		fn(ctx, elapsed)
+		fn(ctx, elapsed, nil)
+	}
+}
+
+// Err calls the trace function with an error
+func Err(ctx context.Context, fn Func, err error) {
+	if fn != nil && err != nil {
+		fn(ctx, 0, err)
 	}
 }

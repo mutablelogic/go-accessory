@@ -38,6 +38,20 @@ func (filter *filter) Key(v string) error {
 	return nil
 }
 
+func (filter *filter) Eq(field string, v any) error {
+	filter.M[field] = bson.M{
+		"$eq": v,
+	}
+	return nil
+}
+
+func (filter *filter) Not(field string, v any) error {
+	filter.M[field] = bson.M{
+		"$ne": v,
+	}
+	return nil
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 

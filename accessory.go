@@ -9,7 +9,7 @@ import (
 ///////////////////////////////////////////////////////////////////////////////
 // INTERFACES
 
-// Client represents a connection to a database server. Open a connection to
+// Conn represents a connection to a database server. Open a connection to
 // the client with
 //
 //	mongodb.Open(context.Context, string, ...ClientOpt) (Client, error)
@@ -30,7 +30,7 @@ import (
 // and you can set up a trace function to record operation timings:
 //
 //	clientopt := mongodb.WithTrace(func(context.Context, time.Duration))
-type Client interface {
+type Conn interface {
 	io.Closer
 
 	// You can call all database operations on the client instance, which will
@@ -118,6 +118,12 @@ type Filter interface {
 	// Match a document primary key. For MongoDB, this can be an ObjectID represented in HEX, or
 	// other string.
 	Key(string) error
+
+	// Eq matches a field with an expression
+	Eq(string, any) error
+
+	// Not negates matching a field with an expression
+	Not(string, any) error
 }
 
 // Sort represents a sort specification for a query

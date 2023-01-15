@@ -17,8 +17,8 @@ import (
 // PUBLIC METHODS
 
 // Insert one or more documents into the default database
-func (client *client) Insert(ctx context.Context, doc ...any) error {
-	return client.Database(defaultDatabase).Insert(ctx, doc...)
+func (conn *conn) Insert(ctx context.Context, doc ...any) error {
+	return conn.Database(defaultDatabase).Insert(ctx, doc...)
 }
 
 // Insert one or more documents into the database

@@ -27,7 +27,7 @@ type TaskFunc func(context.Context, Task) error
 // TaskQueue represents a set of tasks to be executed in order.
 // Create a TaskQueue using:
 //
-//	queue := taskqueue.NewQueue(client, namespace)
+//	queue := taskqueue.NewQueue(conn, namespace)
 type TaskQueue interface {
 	// Schedule a new task to be executed, and return it
 	New(context.Context, ...Tag) (Task, error)
@@ -41,12 +41,12 @@ type TaskQueue interface {
 
 // Task represents a task
 type Task interface {
-	Key() string       // A unique identifier for the task
-	Namespace() string // Return the namespace of the task
-	Tags() []Tag       // Return all metadata tags
+	//Key() string       // A unique identifier for the task
+	//Namespace() string // Return the namespace of the task
+	Tags() []Tag // Return all metadata tags
 
-	// Get a metadata tag value
-	//Get(TagType) any
+	// Get a metadata tag value, or return nil
+	Get(TagType) any
 }
 
 ///////////////////////////////////////////////////////////////////////////////

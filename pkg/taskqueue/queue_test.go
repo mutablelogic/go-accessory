@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	// Packages
 	mongodb "github.com/mutablelogic/go-accessory/pkg/mongodb"
@@ -47,13 +48,34 @@ func Test_Queue_002(t *testing.T) {
 		assert.NoError(err)
 		assert.NotNil(task)
 		assert.NotEmpty(task.Key())
+		assert.Equal(i, task.Get(TaskPriority).(int))
 		t.Log(i, "=>", task)
 	}
 
 	// Set the task priority
-	//assert.NoError(task.Set(context.TODO(), Tag{TagPriority, 1}))
 
 	assert.NoError(c.Close())
+}
+
+func Test_Queue_003(t *testing.T) {
+	assert := assert.New(t)
+	c, err := mongodb.Open(context.TODO(), uri(t), mongodb.OptDatabase("test"))
+	assert.NoError(err)
+	assert.NotNil(c)
+
+	// Create a queue
+	queue := taskqueue.NewQueue(c, "test")
+	assert.NotNil(queue)
+
+	// Read tasks for 10 seconds
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Read tasks until no more tasks
+	assert.NoError(queue.Run(ctx, func(ctx context.Context, task Task) error {
+		t.Log("TODO: Run task", task)
+		return nil
+	}))
 }
 
 ///////////////////////////////////////////////////////////////////////////////

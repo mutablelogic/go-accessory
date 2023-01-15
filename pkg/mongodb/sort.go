@@ -31,12 +31,18 @@ func NewSort() *sort {
 
 // Add ascending sort order
 func (sort *sort) Asc(fields ...string) error {
-	return ErrNotImplemented
+	for _, field := range fields {
+		sort.D = append(sort.D, bson.E{field, 1})
+	}
+	return nil
 }
 
 // Add descending sort order
 func (sort *sort) Desc(fields ...string) error {
-	return ErrNotImplemented
+	for _, field := range fields {
+		sort.D = append(sort.D, bson.E{field, -1})
+	}
+	return nil
 }
 
 // Limit the number of documents returned
@@ -44,7 +50,7 @@ func (sort *sort) Limit(limit int64) error {
 	if limit < 0 {
 		return ErrBadParameter.With("limit")
 	}
-	*sort.limit = limit
+	sort.limit = &limit
 	return nil
 }
 

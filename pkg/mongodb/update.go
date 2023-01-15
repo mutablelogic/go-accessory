@@ -5,13 +5,13 @@ import (
 	"time"
 
 	// Packages
+	trace "github.com/mutablelogic/go-accessory/pkg/trace"
+	bson "go.mongodb.org/mongo-driver/bson"
+	options "go.mongodb.org/mongo-driver/mongo/options"
 
 	// Namespace imports
 	. "github.com/djthorpe/go-errors"
 	. "github.com/mutablelogic/go-accessory"
-	trace "github.com/mutablelogic/go-accessory/pkg/trace"
-	bson "go.mongodb.org/mongo-driver/bson"
-	options "go.mongodb.org/mongo-driver/mongo/options"
 )
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -1,13 +1,11 @@
 package mongodb
 
 import (
-
 	// Package imports
 	trace "github.com/mutablelogic/go-accessory/pkg/trace"
 	driver "go.mongodb.org/mongo-driver/mongo"
 
 	// Namespace imports
-	//. "github.com/djthorpe/go-errors"
 	. "github.com/mutablelogic/go-accessory"
 )
 

@@ -29,9 +29,9 @@ type metaLookupFunc func(...any) *meta
 ///////////////////////////////////////////////////////////////////////////////
 // LIFECYCLE
 
-func NewDatabase(client *client, name string, meta metaLookupFunc, trace trace.Func) *database {
+func NewDatabase(conn *conn, name string, meta metaLookupFunc, trace trace.Func) *database {
 	return &database{
-		Database: client.Client.Database(name),
+		Database: conn.Client.Database(name),
 		metaFn:   meta,
 		traceFn:  trace,
 	}
