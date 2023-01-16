@@ -3,7 +3,7 @@ package query
 import (
 	// Namespace imports
 	. "github.com/mutablelogic/go-accessory"
-	. "github.com/mutablelogic/go-accessory/pkg/quote"
+	. "github.com/mutablelogic/go-accessory/pkg/sqlite/quote"
 )
 
 ///////////////////////////////////////////////////////////////////////////////

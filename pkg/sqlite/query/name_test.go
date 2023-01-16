@@ -4,11 +4,10 @@ import (
 	"testing"
 
 	// Packages
-	assert "github.com/stretchr/testify/assert"
 
 	// Namespace import
-	. "github.com/mutablelogic/go-accessory/pkg/query"
 	. "github.com/mutablelogic/go-accessory"
+	. "github.com/mutablelogic/go-accessory/pkg/sqlite/query"
 )
 
 func Test_Name_000(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	// Import Namespace
-	. "github.com/mutablelogic/go-accessory/pkg/quote"
+	. "github.com/mutablelogic/go-accessory/pkg/sqlite/quote"
 )
 
 func Test_Quote_001(t *testing.T) {
