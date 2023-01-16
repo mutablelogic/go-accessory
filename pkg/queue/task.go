@@ -18,7 +18,7 @@ import (
 type task struct {
 	Key_         string          `bson:"_id,omitempty"`
 	Namespace_   string          `bson:"namespace,omitempty"`
-	Priority_    int             `bson:"pri,omitempty"`
+	Priority_    int             `bson:"priority,omitempty"`
 	CreatedAt_   time.Time       `bson:"created_at,omitempty"`
 	ScheduledAt_ time.Time       `bson:"scheduled_at,omitempty"`
 	ExpiresAt_   time.Time       `bson:"expires_at,omitempty"`

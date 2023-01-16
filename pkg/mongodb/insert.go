@@ -23,7 +23,7 @@ func (conn *conn) Insert(ctx context.Context, doc ...any) error {
 
 // Insert one or more documents into the database
 func (database *database) Insert(ctx context.Context, doc ...any) error {
-	if database.Database == nil {
+	if database == nil || database.Database == nil {
 		return ErrOutOfOrder
 	} else if len(doc) == 0 {
 		return ErrBadParameter

@@ -179,9 +179,7 @@ func (conn *conn) Database(v string) Database {
 	if conn.db == nil {
 		return nil
 	} else if _, exists := conn.db[v]; !exists {
-		if v != defaultDatabase {
-			conn.db[v] = NewDatabase(conn, v, conn.protosToMeta, conn.tracefn)
-		}
+		conn.db[v] = NewDatabase(conn, v, conn.protosToMeta, conn.tracefn)
 	}
 	return conn.db[v]
 }

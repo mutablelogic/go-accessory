@@ -35,6 +35,12 @@ type TaskQueue interface {
 	// Set metadata tag values. Delete a tag if value set to nil
 	//Set(context.Context, Task, ...Tag) error
 
+	// Return "n" highest priority then oldest tasks, with a filter
+	Do(context.Context, TaskFunc, int64, ...Filter) error
+
+	// Release a task, either with error or success
+	Release(context.Context, Task, error) error
+
 	// Run the queue to retain tasks and execute them
 	Run(context.Context, TaskFunc) error
 }
