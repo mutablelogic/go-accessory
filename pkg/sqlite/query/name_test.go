@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	// Packages
+	assert "github.com/stretchr/testify/assert"
 
 	// Namespace import
 	. "github.com/mutablelogic/go-accessory"
@@ -11,8 +12,9 @@ import (
 )
 
 func Test_Name_000(t *testing.T) {
+	assert := assert.New(t)
 	tests := []struct {
-		In     Expr
+		In     Query
 		String string
 	}{
 		{N("a"), `a`},
@@ -22,12 +24,12 @@ func Test_Name_000(t *testing.T) {
 		{N("x y").WithSchema("main").WithAlias("b"), `main."x y" AS b`},
 		{N("insert").WithSchema("main").WithAlias("b"), `main."insert" AS b`},
 		{N("x").WithType("TEXT"), `x TEXT`},
-		{N("x").WithDesc(), `x DESC`},
+		{N("x", DESC), `x DESC`},
+		{N("x", ASC), `x ASC`},
+		{N("x", DESC, ASC), `x ASC`}, // defaults to ASC, not DESC
+		{N("x", PRIMARY_KEY, AUTO_INCREMENT), `x PRIMARY KEY AUTOINCREMENT`},
 	}
-
 	for _, test := range tests {
-		if v := test.In.String(); v != test.String {
-			t.Errorf("got %v, wanted %v", v, test.String)
-		}
+		assert.Equal(test.String, test.In.Query())
 	}
 }
