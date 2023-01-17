@@ -24,7 +24,7 @@ const (
 
 func Test_Pool_001(t *testing.T) {
 	assert := assert.New(t)
-	pool := pool.New(context.TODO(), uri(t))
+	pool := pool.New(context.TODO(), uri(t), traceopt(t))
 	assert.NotNil(pool)
 	assert.NoError(pool.Close())
 }
@@ -42,13 +42,7 @@ func Test_Pool_002(t *testing.T) {
 
 func Test_Pool_003(t *testing.T) {
 	assert := assert.New(t)
-	pool := pool.New(context.TODO(), uri(t), pool.OptTrace(func(ctx context.Context, delta time.Duration, err error) {
-		if err != nil {
-			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", err)
-		} else {
-			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", delta)
-		}
-	}))
+	pool := pool.New(context.TODO(), uri(t), traceopt(t))
 	assert.NotNil(pool)
 
 	var wg sync.WaitGroup
@@ -71,17 +65,11 @@ func Test_Pool_003(t *testing.T) {
 
 func Test_Pool_004(t *testing.T) {
 	assert := assert.New(t)
-	pool := pool.New(context.TODO(), uri(t), pool.OptTrace(func(ctx context.Context, delta time.Duration, err error) {
-		if err != nil {
-			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", err)
-		} else {
-			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", delta)
-		}
-	}))
+	pool := pool.New(context.TODO(), uri(t), traceopt(t))
 	assert.NotNil(pool)
 
 	var wg sync.WaitGroup
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 FOR_LOOP:
 	for {
@@ -97,7 +85,9 @@ FOR_LOOP:
 				time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
 				conn := pool.Get()
 				assert.NotNil(conn)
-				assert.NoError(conn.Ping(context.TODO()))
+				if conn != nil {
+					assert.NoError(conn.Ping(context.TODO()))
+				}
 				time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
 				pool.Put(conn)
 			}()
@@ -110,13 +100,7 @@ FOR_LOOP:
 
 func Test_Pool_005(t *testing.T) {
 	assert := assert.New(t)
-	pool := pool.New(context.TODO(), uri(t), pool.OptTrace(func(ctx context.Context, delta time.Duration, err error) {
-		if err != nil {
-			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", err)
-		} else {
-			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", delta)
-		}
-	}), pool.OptMaxSize(10))
+	pool := pool.New(context.TODO(), uri(t), traceopt(t), pool.OptMaxSize(10))
 	assert.NotNil(pool)
 
 	var conns []Conn
@@ -138,6 +122,16 @@ func Test_Pool_005(t *testing.T) {
 
 ///////////////////////////////////////////////////////////////////////////////
 // Return URL or skip test
+
+func traceopt(t *testing.T) pool.Option {
+	return pool.OptTrace(func(ctx context.Context, delta time.Duration, err error) {
+		if err != nil {
+			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", err)
+		} else {
+			t.Log("TRACE:", trace.DumpContextStr(ctx), "=>", delta)
+		}
+	})
+}
 
 func uri(t *testing.T) *url.URL {
 	if uri := os.ExpandEnv(MONGO_URL); uri == "" {

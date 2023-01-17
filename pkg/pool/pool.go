@@ -38,7 +38,9 @@ type pool struct {
 // GLOBALS
 
 const (
-	schemeMongoDB = "mongodb"
+	schemeMongo1 = "mongodb"
+	schemeMongo2 = "mongodb+srv"
+	schemeSqlite = "sqlite"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -46,50 +48,67 @@ const (
 
 // Create a pool with the given URL. The URL should be of scheme "mongodb"
 // "file", or "sqlite".
-func New(ctx context.Context, uri *url.URL, opts ...ClientOpt) Pool {
+func New(ctx context.Context, uri *url.URL, opts ...Option) Pool {
 	pool := new(pool)
+
+	// Client options - before client is created
+	for _, opt := range opts {
+		if err := opt(pool); err != nil {
+			trace.Err(trace.WithUrl(ctx, trace.OpConnect, uri), pool.trace, err)
+			return nil
+		}
+	}
 
 	// Check parameters
 	if uri == nil {
+		trace.Err(trace.WithUrl(ctx, trace.OpConnect, uri), pool.trace, ErrBadParameter.With("uri"))
 		return nil
 	} else {
 		pool.uri = uri
 	}
 
-	// Client options
-	for _, opt := range opts {
-		if err := opt(pool); err != nil {
-			return nil
-		}
-	}
-
 	// Set the connection factory function
 	switch uri.Scheme {
-	case schemeMongoDB:
+	case schemeMongo1, schemeMongo2:
 		pool.p.New = func() any {
-			if !pool.drain.Load() {
-				return pool.NewMongoDB(context.Background())
-			} else {
+			// Check for draining
+			if pool.drain.Load() {
 				return nil
 			}
+			// Create MongoDB connection
+			if conn, err := pool.NewMongoDB(context.Background()); err != nil {
+				trace.Err(trace.WithUrl(ctx, trace.OpConnect, uri), pool.trace, err)
+				return nil
+			} else {
+				return conn
+			}
 		}
-		conn := pool.NewMongoDB(ctx)
-		if conn == nil {
+		// Add the first connection to the pool
+		if conn, err := pool.NewMongoDB(ctx); err != nil {
+			trace.Err(trace.WithUrl(ctx, trace.OpConnect, uri), pool.trace, err)
 			return nil
 		} else {
 			pool.size.Add(1)
 			pool.Put(conn)
 		}
 	default:
+		trace.Err(trace.WithUrl(ctx, trace.OpConnect, uri), pool.trace, ErrBadParameter.With(uri))
 		return nil
+	}
+
+	// Client options - after client is created
+	for _, opt := range opts {
+		if err := opt(pool); err != nil {
+			trace.Err(trace.WithUrl(ctx, trace.OpConnect, uri), pool.trace, err)
+			return nil
+		}
 	}
 
 	// Return success
 	return pool
 }
 
-// Create a pool with the given URL. The URL should be of scheme "mongodb"
-// "file", or "sqlite".
+// Drain the pool and close all connections
 func (pool *pool) Close() error {
 	var result error
 
@@ -117,8 +136,12 @@ func (pool *pool) Close() error {
 
 func (pool *pool) String() string {
 	str := "<pool"
-	str += fmt.Sprintf(" uri=%q", pool.uri.String())
-	str += fmt.Sprint(" size=", pool.Size())
+	if pool.uri != nil {
+		str += fmt.Sprintf(" uri=%q", pool.uri.String())
+	}
+	if size := pool.Size(); size > 0 {
+		str += fmt.Sprint(" size=", pool.Size())
+	}
 	if pool.max > 0 {
 		str += fmt.Sprint(" max_size=", pool.max)
 	}
@@ -158,12 +181,6 @@ func (pool *pool) Size() int {
 // PRIVATE METHODS
 
 // Create a new MongoDB connection with the required options
-func (pool *pool) NewMongoDB(ctx context.Context) Conn {
-	// Create a new connection
-	conn, err := mongodb.Open(ctx, pool.uri, pool.mongodb...)
-	if err != nil {
-		trace.Err(ctx, pool.trace, err)
-		return nil
-	}
-	return conn
+func (pool *pool) NewMongoDB(ctx context.Context) (Conn, error) {
+	return mongodb.Open(ctx, pool.uri, pool.mongodb...)
 }
