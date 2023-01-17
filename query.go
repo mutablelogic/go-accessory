@@ -53,11 +53,11 @@ type Query interface {
 type Name interface {
 	Query
 
+	// Use a specific alias name
+	As(string) Name
+
 	// Use a specific schema name
 	WithSchema(string) Name
-
-	// Use a specific alias name
-	WithAlias(string) Name
 
 	// Set a declared type
 	WithType(string) Name

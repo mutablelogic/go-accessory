@@ -18,11 +18,11 @@ func Test_Name_000(t *testing.T) {
 		String string
 	}{
 		{N("a"), `a`},
-		{N("a").WithAlias("b"), `a AS b`},
+		{N("a").As("b"), `a AS b`},
 		{N("a").WithSchema("main"), `main.a`},
-		{N("a").WithSchema("main").WithAlias("b"), `main.a AS b`},
-		{N("x y").WithSchema("main").WithAlias("b"), `main."x y" AS b`},
-		{N("insert").WithSchema("main").WithAlias("b"), `main."insert" AS b`},
+		{N("a").WithSchema("main").As("b"), `main.a AS b`},
+		{N("x y").WithSchema("main").As("b"), `main."x y" AS b`},
+		{N("insert").WithSchema("main").As("b"), `main."insert" AS b`},
 		{N("x").WithType("TEXT"), `x TEXT`},
 		{N("x", DESC), `x DESC`},
 		{N("x", ASC), `x ASC`},
