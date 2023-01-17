@@ -55,6 +55,8 @@ The `Size` function returns the current number of connections in the pool:
     size := pool.Size()
 ```
 
+It does not count connections which are currently in use.
+
 ## Why use a connection pool
 
 A connection pool is used to reduce the overhead of establishing a connection to a database. The connection pool will maintain a pool of connections to the database, and will reuse these connections when a new connection is requested. In addition,
