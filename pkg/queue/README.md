@@ -1,7 +1,7 @@
 
 # Task Queue
 
-This is an implementation of a task queue, which is a queue of tasks which are executed in order, with retry and expiry options. In order to create a task queue, use the `New` function with a [Connection Pool](../pool) and a namespace to use for the queue.
+This is an implementation of a task queue, which is a queue of tasks which are executed in order, with retry and expiry options. In order to create a task queue, use the `New` function with a [Connection Pool](../pool) and any additional options:
 
 ```go
 
@@ -28,8 +28,11 @@ The set of options you can pass are as follows:
 | Option | Description |
 |--------|-------------|
 | `queue.OptNamespace(string)` | Set the namespace to use for the queue |
-| `queue.OptMaxAge(time.Duration)` | The maximum age for any task before expiry |
-| `queue.OptWorkers(uint, time.Duration)` | The number of simultaneous task workers, and the maximum time a worker is allowed to run for, or zero for no deadline |
+| `queue.OptMaxAge(time.Duration)` | The maximum age for any task before expiry. By default, a task is retried without a deadline |
+| `queue.OptMaxRetries(uint)` | The maximum number of retries for any task. By default, a task is retried without a maximum retry count |
+| `queue.OptWorkers(uint, time.Duration)` | The number of simultaneous task workers, and the maximum time a worker is allowed to run for, or zero for no deadline. By default, the number of workers equals the number of CPU cores and there is no task deadline |
+
+Where a task queue is used on a single host, the tasks will be spread across the available workers. Where there are task queues executing on multiple hosts (using a MongoDB database, rather than sqlite), the tasks will be spread across the available workers on all hosts.
 
 ## Tasks
 
@@ -67,4 +70,6 @@ You define a task worker as a function passed to the `queue.Run` method:
 ```
 
 The signature of a worker function is `func(context.Context, Task) error`. The context should allow a worker to be cancelled and return an error for long-running tasks exceeding a deadline. The worker should return an error if a task could not be completed successfully, or `nil` if the task was completed successfully.
+
+Your worker function can obtain task parameters using the `task.Tags()` method. The tag values are currently always strings, which can then be parsed into other types.
 
