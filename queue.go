@@ -16,10 +16,10 @@ type Tag struct {
 	Value any
 }
 
-// TaskFunc is used for executing tasks. When an error is returned, the task
+// WorkerFunc is used for executing tasks. When an error is returned, the task
 // should be retried at some later date, or released if the error indicates
 // the task should not be retried.
-type TaskFunc func(context.Context, Task) error
+type WorkerFunc func(context.Context, Task) error
 
 ///////////////////////////////////////////////////////////////////////////////
 // INTERFACES
@@ -32,17 +32,18 @@ type TaskQueue interface {
 	// Schedule a new task to be executed, and return it
 	New(context.Context, ...Tag) (Task, error)
 
+	// Run the queue to retain tasks and execute them
+	Run(context.Context, WorkerFunc) error
+
 	// Set metadata tag values. Delete a tag if value set to nil
 	//Set(context.Context, Task, ...Tag) error
 
 	// Return "n" highest priority then oldest tasks, with a filter
-	Do(context.Context, TaskFunc, int64, ...Filter) error
+	//Do(context.Context, WorkerFunc, int64, ...Filter) error
 
 	// Release a task, either with error or success
-	Release(context.Context, Task, error) error
+	//Release(context.Context, Task, error) error
 
-	// Run the queue to retain tasks and execute them
-	Run(context.Context, TaskFunc) error
 }
 
 // Task represents a task

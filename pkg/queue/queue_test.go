@@ -22,7 +22,7 @@ const (
 func Test_Queue_001(t *testing.T) {
 	assert := assert.New(t)
 	pool := pool.New(context.TODO(), uri(t))
-	queue := queue.NewQueue(pool, "test")
+	queue := queue.NewQueue(pool, queue.OptNamespace("test"))
 	assert.NotNil(queue)
 	assert.NoError(pool.Close())
 }
@@ -30,7 +30,7 @@ func Test_Queue_001(t *testing.T) {
 func Test_Queue_002(t *testing.T) {
 	assert := assert.New(t)
 	pool := pool.New(context.TODO(), uri(t), pool.OptDatabase("test"))
-	queue := queue.NewQueue(pool, "test")
+	queue := queue.NewQueue(pool, queue.OptNamespace("test"))
 	assert.NotNil(queue)
 
 	// Create N tasks, from lowest to highest priority
@@ -38,8 +38,10 @@ func Test_Queue_002(t *testing.T) {
 		task, err := queue.New(context.TODO(), Tag{TaskPriority, i})
 		assert.NoError(err)
 		assert.NotNil(task)
-		assert.NotEmpty(task.Key())
-		t.Log("Created task", task)
+		if task != nil {
+			assert.NotEmpty(task.Key())
+			t.Log("Created task", task)
+		}
 	}
 
 	// Get N tasks and do work on them within a transaction. The task is retained
@@ -60,11 +62,12 @@ func Test_Queue_002(t *testing.T) {
 	//     expires_at is not zero and >= now (because the task expired or is too old)
 	//   or,
 	//     retry_count >= max_retries (because the task failed too many times)
-	queue.Do(context.TODO(), func(ctx context.Context, task Task) error {
+	/*queue.Do(context.TODO(), func(ctx context.Context, task Task) error {
 		// TODO: Retain task, do work, then release task, in a worker object
 		t.Log("Releasing task", task)
 		return queue.Release(ctx, task, nil)
 	}, 0)
+	*/
 
 	// Close connection pool
 	assert.NoError(pool.Close())
