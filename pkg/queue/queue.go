@@ -119,6 +119,8 @@ func (queue *queue) Run(ctx context.Context, fn WorkerFunc) error {
 	}
 
 	// Wait for context to be cancelled
+	// TODO: Context will retieve tasks from the queue and send them to the channel
+	// where workers will pick them up. Wait until context is cancelled, then close
 	<-ctx.Done()
 
 	// Close channel
@@ -155,6 +157,13 @@ func (queue *queue) New(ctx context.Context, tag ...Tag) (Task, error) {
 	// Set scheduled_at if not set
 	if task.Get(TaskScheduledAt).(time.Time).IsZero() {
 		if err := task.set(TaskScheduledAt, task.Get(TaskCreatedAt)); err != nil {
+			return nil, err
+		}
+	}
+
+	// Set expires_at if max_age is set
+	if task.Get(TaskExpiresAt).(time.Time).IsZero() && queue.max_age > 0 {
+		if err := task.set(TaskExpiresAt, task.Get(TaskCreatedAt).(time.Time).Add(queue.max_age)); err != nil {
 			return nil, err
 		}
 	}

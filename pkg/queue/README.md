@@ -31,6 +31,7 @@ The set of options you can pass are as follows:
 | `queue.OptMaxAge(time.Duration)` | The maximum age for any task before expiry. By default, a task is retried without a deadline |
 | `queue.OptMaxRetries(uint)` | The maximum number of retries for any task. By default, a task is retried without a maximum retry count |
 | `queue.OptWorkers(uint, time.Duration)` | The number of simultaneous task workers, and the maximum time a worker is allowed to run for, or zero for no deadline. By default, the number of workers equals the number of CPU cores and there is no task deadline |
+| `queue.OptBackoff(time.Duration)` | The backoff time on task failure. On first retry is made after the backoff period, the second after two times the backoff period and so forth |
 
 Where a task queue is used on a single host, the tasks will be spread across the available workers. Where there are task queues executing on multiple hosts (using a MongoDB database, rather than sqlite), the tasks will be spread across the available workers on all hosts.
 
