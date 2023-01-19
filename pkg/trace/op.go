@@ -25,6 +25,7 @@ const (
 	OpUpdateMany
 	OpUpsert
 	OpUpsertMany
+	OpFindUpdate
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -56,6 +57,8 @@ func (o Op) String() string {
 		return "Update"
 	case OpUpdateMany:
 		return "UpdateMany"
+	case OpFindUpdate:
+		return "FindUpdate"
 	case OpCommit:
 		return "Commit"
 	case OpRollback:

@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	// Packages
 	pool "github.com/mutablelogic/go-accessory/pkg/pool"
@@ -68,6 +69,38 @@ func Test_Queue_002(t *testing.T) {
 		return queue.Release(ctx, task, nil)
 	}, 0)
 	*/
+
+	// Close connection pool
+	assert.NoError(pool.Close())
+}
+
+func Test_Queue_003(t *testing.T) {
+	assert := assert.New(t)
+	pool := pool.New(context.TODO(), uri(t), pool.OptDatabase("test"))
+	queue := queue.NewQueue(pool, queue.OptNamespace("test"))
+	assert.NotNil(queue)
+
+	// Create N tasks, from lowest to highest priority
+	for i := 0; i < 10; i++ {
+		task, err := queue.New(context.TODO(), Tag{TaskPriority, i})
+		assert.NoError(err)
+		assert.NotNil(task)
+		if task != nil {
+			assert.NotEmpty(task.Key())
+			t.Log("Created task", task)
+		}
+	}
+
+	// Run workers to process tasks
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	assert.NoError(queue.Run(ctx, func(ctx context.Context, task Task) error {
+		t.Log("Running task", task)
+		// TODO:
+		// * If task has expired, then delete it
+		// * Otherwise, execute the task and return nil for success, or an error for failure
+		return nil
+	}))
 
 	// Close connection pool
 	assert.NoError(pool.Close())

@@ -1,7 +1,6 @@
 package mongodb
 
 import (
-	"fmt"
 	"time"
 
 	// Package imports
@@ -24,7 +23,6 @@ func OptDatabase(v string) ClientOpt {
 	return func(conn *conn) error {
 		// Apply after client is connected
 		if conn.Client != nil {
-			fmt.Println("setting database to", v, "=>", conn.Database(v))
 			conn.db[defaultDatabase] = conn.Database(v).(*database)
 		}
 		return nil

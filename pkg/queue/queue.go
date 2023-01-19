@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"runtime"
 	"sync"
@@ -11,7 +12,7 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 
 	// Namespace imports
-	//. "github.com/djthorpe/go-errors"
+	. "github.com/djthorpe/go-errors"
 	. "github.com/mutablelogic/go-accessory"
 )
 
@@ -38,6 +39,7 @@ var _ TaskQueue = (*queue)(nil)
 const (
 	defaultBackoff = 10 * time.Second
 	defaultRetries = 10
+	defaultDelta   = time.Second
 )
 
 var (
@@ -109,16 +111,40 @@ func (queue *queue) Run(ctx context.Context, fn WorkerFunc) error {
 	var wg sync.WaitGroup
 	var ch = make(chan Task, queue.workers)
 
+	// Check parameters
+	if fn == nil {
+		return ErrBadParameter.With("Run")
+	} else if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	// Spin up workers
 	for i := uint(0); i < queue.workers; i++ {
 		wg.Add(1)
 		go func(i uint, ch <-chan Task, fn WorkerFunc) {
 			defer wg.Done()
-			queue.run(i, ch, fn)
+			queue.run(ctx, ch, fn)
 		}(i, ch, fn)
 	}
 
 	// Wait for context to be cancelled
+	timer := time.NewTimer(0)
+	defer timer.Stop()
+FOR_LOOP:
+	for {
+		select {
+		case <-ctx.Done():
+			break FOR_LOOP
+		case <-timer.C:
+			task, err := queue.Retain(ctx)
+			if err != nil {
+				fmt.Println("TODO:", err)
+			} else if task != nil {
+				ch <- task
+			}
+			timer.Reset(defaultDelta)
+		}
+	}
 	// TODO: Context will retieve tasks from the queue and send them to the channel
 	// where workers will pick them up. Wait until context is cancelled, then close
 	<-ctx.Done()
@@ -181,55 +207,60 @@ func (queue *queue) New(ctx context.Context, tag ...Tag) (Task, error) {
 // PRIVATE METHODS
 
 // run is a worker function which performs tasks
-func (queue *queue) run(i uint, ch <-chan Task, fn WorkerFunc) {
-	fmt.Println("START Worker", i)
+func (queue *queue) run(parent context.Context, ch <-chan Task, fn WorkerFunc) {
 	// Accept tasks until the channel is closed
 	for task := range ch {
-		fmt.Println("TODO: Worker", i, "does", task)
+		// Create a context with a deadline
+		ctx, cancel := taskctx(parent, queue.deadline)
+
+		// Run the task
+		if err := fn(ctx, task); err != nil {
+			fmt.Println("TODO: Fail ", task, " with error ", err)
+		} else {
+			fmt.Println("TODO: Release task", task)
+		}
+
+		// Call cancel
+		cancel()
 	}
-	fmt.Println("STOP Worker", i)
 }
 
-/*
-// Perform some operation on up to "limit" tasks
-func (queue *queue) Do(ctx context.Context, fn TaskFunc, limit int64, filter ...Filter) error {
+// taskctx can return a context with a deadline if it is set
+func taskctx(parent context.Context, deadline time.Duration) (context.Context, context.CancelFunc) {
+	if deadline > 0 {
+		return context.WithTimeout(parent, deadline)
+	} else {
+		return parent, func() {}
+	}
+}
+
+// Retain a task from the queue
+func (queue *queue) Retain(ctx context.Context, filter ...Filter) (Task, error) {
 	// Get a connection from the pool
 	conn := queue.Pool.Get()
 	defer queue.Pool.Put(conn)
 	if conn == nil {
-		return ErrOutOfOrder.With("unable to establish a connection")
+		return nil, ErrOutOfOrder.With("unable to establish a connection")
 	}
 
-	// Sort by priority, then scheduled_at
+	// Sort by priority, then scheduled_at and limit to one task
 	sort := conn.S()
 	sort.Desc(string(TaskPriority))
 	sort.Asc(string(TaskScheduledAt))
-	if limit > 0 {
-		sort.Limit(limit)
-	}
-	sort.Limit(limit)
 
-	// Perform operations on tasks in a transaction
-	return conn.Do(ctx, func(ctx context.Context) error {
-		cursor, err := conn.Collection(task{}).FindMany(ctx, sort)
-		if err != nil {
-			return err
-		}
-		for {
-			task, err := cursor.Next(ctx)
-			if err == io.EOF {
-				break
-			} else if err != nil {
-				return err
-			} else if err := fn(ctx, task.(Task)); err != nil {
-				return err
-			}
-		}
-		// Return success
-		return nil
-	})
+	// Filter by task
+	task, err := conn.Collection(task{}).Find(ctx, sort, filter...)
+	if errors.Is(err, ErrNotFound) || task == nil {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Return success
+	return task.(Task), nil
 }
 
+/*
 // Release a task with an error or with success. This will delete the task from
 // the queue if there is no error, otherwise it will update the task with the
 // error and increment the retry count.

@@ -102,6 +102,11 @@ type Collection interface {
 	// Update zero or more document with given values and return the number
 	// of documents matched and modified, neither of which should be more than one.
 	UpdateMany(context.Context, any, ...Filter) (int64, int64, error)
+
+	// FindUpdate selects a single document based on filter and sort parameters,
+	// updates the document with the given values and returns the document as it appeared
+	// before updating, or ErrNotFound if no document is found and updated.
+	FindUpdate(context.Context, any, Sort, ...Filter) (any, error)
 }
 
 // Cursor represents an iterable cursor to a result set

@@ -51,20 +51,20 @@ const (
 func New(ctx context.Context, uri *url.URL, opts ...Option) Pool {
 	pool := new(pool)
 
-	// Client options - before client is created
-	for _, opt := range opts {
-		if err := opt(pool); err != nil {
-			trace.Err(trace.WithUrl(ctx, trace.OpConnect, uri), pool.trace, err)
-			return nil
-		}
-	}
-
 	// Check parameters
 	if uri == nil {
 		trace.Err(trace.WithUrl(ctx, trace.OpConnect, uri), pool.trace, ErrBadParameter.With("uri"))
 		return nil
 	} else {
 		pool.uri = uri
+	}
+
+	// Client options - before client is created
+	for _, opt := range opts {
+		if err := opt(pool); err != nil {
+			trace.Err(trace.WithUrl(ctx, trace.OpConnect, uri), pool.trace, err)
+			return nil
+		}
 	}
 
 	// Set the connection factory function
