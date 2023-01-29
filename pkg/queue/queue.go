@@ -235,7 +235,7 @@ func taskctx(parent context.Context, deadline time.Duration) (context.Context, c
 }
 
 // Retain a task from the queue
-func (queue *queue) Retain(ctx context.Context, filter ...Filter) (Task, error) {
+func (queue *queue) Retain(ctx context.Context) (Task, error) {
 	// Get a connection from the pool
 	conn := queue.Pool.Get()
 	defer queue.Pool.Put(conn)
@@ -243,13 +243,23 @@ func (queue *queue) Retain(ctx context.Context, filter ...Filter) (Task, error) 
 		return nil, ErrOutOfOrder.With("unable to establish a connection")
 	}
 
-	// Sort by priority, then scheduled_at and limit to one task
+	// Sort by priority, then scheduled_at so we receive the highest priority tasks
+	// first, and then the oldest scheduled tasks next
 	sort := conn.S()
 	sort.Desc(string(TaskPriority))
 	sort.Asc(string(TaskScheduledAt))
 
+	// Filter to find a task with scheduled_at <= now and expires_at > now
+	filter := conn.F()
+	filter.Eq("namespace", queue.namespace)      // AND namespace = queue.namespace
+	filter.GreaterEq("scheduled_at", time.Now()) // AND expires_at != nil
+	filter.Less("expires_at", time.Now())        // OR expires_at == nil
+
+	// Patch to update the scheduled_at field to nil
+	patch := task{ScheduledAt_: time.Time{}}
+
 	// Filter by task
-	task, err := conn.Collection(task{}).Find(ctx, sort, filter...)
+	task, err := conn.Collection(task{}).FindUpdate(ctx, patch, sort, filter)
 	if errors.Is(err, ErrNotFound) || task == nil {
 		return nil, nil
 	} else if err != nil {

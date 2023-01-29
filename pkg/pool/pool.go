@@ -80,7 +80,7 @@ func New(ctx context.Context, uri *url.URL, opts ...Option) Pool {
 				trace.Err(trace.WithUrl(ctx, trace.OpConnect, uri), pool.trace, err)
 				return nil
 			} else {
-				return conn
+				return &poolconn{conn}
 			}
 		}
 		// Add the first connection to the pool
@@ -89,7 +89,7 @@ func New(ctx context.Context, uri *url.URL, opts ...Option) Pool {
 			return nil
 		} else {
 			pool.size.Add(1)
-			pool.Put(conn)
+			pool.Put(&poolconn{conn})
 		}
 	default:
 		trace.Err(trace.WithUrl(ctx, trace.OpConnect, uri), pool.trace, ErrBadParameter.With(uri))
@@ -119,7 +119,7 @@ func (pool *pool) Close() error {
 	for {
 		if conn := pool.p.Get(); conn == nil {
 			break
-		} else if err := conn.(Conn).Close(); err != nil {
+		} else if err := conn.(*poolconn).Conn.Close(); err != nil {
 			result = multierror.Append(result, err)
 		}
 	}
@@ -162,14 +162,20 @@ func (pool *pool) Get() Conn {
 		return nil
 	}
 	pool.size.Add(1)
+
+	// Wrap connection in a poolconn, which returns an error when Close is called
 	return conn.(Conn)
 }
 
 // Put a connection back into the connection pool
 func (pool *pool) Put(v Conn) {
-	if v != nil {
-		pool.p.Put(v)
+	if v == nil {
+		return
+	} else if conn, ok := v.(*poolconn); ok {
+		pool.p.Put(conn)
 		pool.size.Add(-1)
+	} else {
+		panic("not a *poolconn")
 	}
 }
 

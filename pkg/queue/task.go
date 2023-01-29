@@ -17,7 +17,7 @@ import (
 // task is a task in the queue
 type task struct {
 	Key_         string          `bson:"_id,omitempty"`
-	Namespace_   string          `bson:"namespace,omitempty"`
+	Namespace_   string          `bson:"namespace"`
 	Priority_    int             `bson:"priority,omitempty"`
 	CreatedAt_   time.Time       `bson:"created_at,omitempty"`
 	ScheduledAt_ time.Time       `bson:"scheduled_at,omitempty"`

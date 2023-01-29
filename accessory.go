@@ -119,6 +119,7 @@ type Cursor interface {
 }
 
 // Filter represents a filter expression for a query
+
 type Filter interface {
 	// Match a document primary key. For MongoDB, this can be an ObjectID represented in HEX, or
 	// other string.
@@ -126,9 +127,22 @@ type Filter interface {
 
 	// Eq matches a field with an expression
 	Eq(string, any) error
+	/*
 
-	// Not negates matching a field with an expression
-	Not(string, any) error
+		// Not negates matching a field with an expression
+		Not(string, any) Filter
+
+		// Field is less than
+		Less(string, any) Filter
+
+		// Field is greater than
+		Greater(string, any) Filter
+
+		// Combine multiple filters with AND
+		And(...Filter) Filter
+
+		// Combine multiple filters with OR
+		Or(...Filter) Filter*/
 }
 
 // Sort represents a sort specification for a query
