@@ -9,7 +9,7 @@ import (
 ///////////////////////////////////////////////////////////////////////////////
 // INTERFACES
 
-// Client represents a connection to a database server. Open a connection to
+// Conn represents a connection to a database server. Open a connection to
 // the client with
 //
 //	mongodb.Open(context.Context, string, ...ClientOpt) (Client, error)
@@ -26,7 +26,11 @@ import (
 // You can map a go struct intstance to a collection name:
 //
 //	clientopt := mongodb.WithCollection(any, string)
-type Client interface {
+//
+// and you can set up a trace function to record operation timings:
+//
+//	clientopt := mongodb.WithTrace(func(context.Context, time.Duration))
+type Conn interface {
 	io.Closer
 
 	// You can call all database operations on the client instance, which will
@@ -45,9 +49,6 @@ type Client interface {
 
 	// Return all existing databases on the server
 	Databases(context.Context) ([]Database, error)
-
-	// Return true if a database with given name exists
-	Exists(context.Context, string) bool
 
 	// Perform operations within a transaction. Rollback or apply
 	// changes to the database depending on error return.
@@ -69,17 +70,9 @@ type Database interface {
 	// Return a collection object for a specific struct
 	Collection(any) Collection
 
-	// Return all existing collections in the database
-	Collections(context.Context) ([]Collection, error)
-
-	// Insert a single document to the database and return key for the document
-	// represented as a string. The document key is updated if the document is
-	// writable.
-	Insert(context.Context, any) (string, error)
-
-	// Insert many documents of the same type to the database and return keys for the documents.
-	// Documents are updated with their key if they are writable.
-	InsertMany(context.Context, ...any) ([]string, error)
+	// Insert documents of the same type to the database. The document key is updated
+	// if the document is writable.
+	Insert(context.Context, ...any) error
 }
 
 type Collection interface {
@@ -109,6 +102,11 @@ type Collection interface {
 	// Update zero or more document with given values and return the number
 	// of documents matched and modified, neither of which should be more than one.
 	UpdateMany(context.Context, any, ...Filter) (int64, int64, error)
+
+	// FindUpdate selects a single document based on filter and sort parameters,
+	// updates the document with the given values and returns the document as it appeared
+	// before updating, or ErrNotFound if no document is found and updated.
+	FindUpdate(context.Context, any, Sort, ...Filter) (any, error)
 }
 
 // Cursor represents an iterable cursor to a result set
@@ -121,10 +119,30 @@ type Cursor interface {
 }
 
 // Filter represents a filter expression for a query
+
 type Filter interface {
 	// Match a document primary key. For MongoDB, this can be an ObjectID represented in HEX, or
 	// other string.
 	Key(string) error
+
+	// Eq matches a field with an expression
+	Eq(string, any) error
+	/*
+
+		// Not negates matching a field with an expression
+		Not(string, any) Filter
+
+		// Field is less than
+		Less(string, any) Filter
+
+		// Field is greater than
+		Greater(string, any) Filter
+
+		// Combine multiple filters with AND
+		And(...Filter) Filter
+
+		// Combine multiple filters with OR
+		Or(...Filter) Filter*/
 }
 
 // Sort represents a sort specification for a query

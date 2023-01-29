@@ -1,8 +1,10 @@
 package mongodb
 
 import (
-	"reflect"
 	"time"
+
+	// Package imports
+	trace "github.com/mutablelogic/go-accessory/pkg/trace"
 
 	// Namespace Imports
 	. "github.com/djthorpe/go-errors"
@@ -11,17 +13,17 @@ import (
 ///////////////////////////////////////////////////////////////////////////////
 // TYPES
 
-type ClientOpt func(*client) error
+type ClientOpt func(*conn) error
 
 ///////////////////////////////////////////////////////////////////////////////
 // PUBLIC METHODS
 
 // Set the current database
 func OptDatabase(v string) ClientOpt {
-	return func(client *client) error {
+	return func(conn *conn) error {
 		// Apply after client is connected
-		if client.Client != nil {
-			client.db[defaultDatabase] = client.Database(v).(*database)
+		if conn.Client != nil {
+			conn.db[defaultDatabase] = conn.Database(v).(*database)
 		}
 		return nil
 	}
@@ -29,15 +31,15 @@ func OptDatabase(v string) ClientOpt {
 
 // Set the default timeout
 func OptTimeout(v time.Duration) ClientOpt {
-	return func(client *client) error {
+	return func(conn *conn) error {
 		if v == 0 {
 			v = defaultTimeout
 		}
-		if client.Client == nil {
+		if conn.Client == nil {
 			if v <= 0 {
 				return ErrBadParameter.With("timeout")
 			}
-			client.timeout = v
+			conn.timeout = v
 		}
 		return nil
 	}
@@ -45,16 +47,24 @@ func OptTimeout(v time.Duration) ClientOpt {
 
 // Set the default timeout
 func OptCollection(collection any, name string) ClientOpt {
-	return func(client *client) error {
-		if client.Client == nil {
+	return func(conn *conn) error {
+		if conn.Client == nil {
 			return nil
 		}
 
 		// Create a new collection
-		if collection := NewCollection(reflect.TypeOf(collection), name); collection == nil {
-			return ErrBadParameter.Withf("Invalid collectionof type %T", collection)
-		} else {
-			client.col[collection.Type] = collection
+		if meta := conn.registerProto(collection, name); meta == nil {
+			return ErrBadParameter.Withf("Invalid collection of type %T", collection)
+		}
+		return nil
+	}
+}
+
+// Set the trace function
+func OptTrace(fn trace.Func) ClientOpt {
+	return func(conn *conn) error {
+		if conn.Client == nil {
+			conn.tracefn = fn
 		}
 		return nil
 	}

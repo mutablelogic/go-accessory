@@ -28,7 +28,7 @@ func NewFilter() *filter {
 ///////////////////////////////////////////////////////////////////////////////
 // PUBLIC METHODS
 
-func (filter *filter) ObjectId(v string) error {
+func (filter *filter) Key(v string) error {
 	if id, err := primitive.ObjectIDFromHex(v); err != nil {
 		return err
 	} else {
@@ -36,4 +36,38 @@ func (filter *filter) ObjectId(v string) error {
 	}
 	// Return success
 	return nil
+}
+
+func (filter *filter) Eq(field string, v any) error {
+	filter.M[field] = bson.M{
+		"$eq": v,
+	}
+	return nil
+}
+
+func (filter *filter) Not(field string, v any) error {
+	filter.M[field] = bson.M{
+		"$ne": v,
+	}
+	return nil
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// PRIVATE METHODS
+
+// and together a set of filters
+func and(f ...Filter) any {
+	var elems bson.A
+	for _, f := range f {
+		if f != nil {
+			elems = append(elems, f.(*filter).M)
+		}
+	}
+	if len(elems) == 0 {
+		return bson.D{}
+	}
+	if len(elems) == 1 {
+		return elems[0]
+	}
+	return bson.M{"$and": elems}
 }

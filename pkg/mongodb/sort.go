@@ -14,6 +14,7 @@ import (
 
 type sort struct {
 	bson.D
+	limit *int64
 }
 
 var _ Sort = (*sort)(nil)
@@ -22,7 +23,7 @@ var _ Sort = (*sort)(nil)
 // LIFECYCLE
 
 func NewSort() *sort {
-	return &sort{bson.D{}}
+	return &sort{bson.D{}, nil}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -30,15 +31,43 @@ func NewSort() *sort {
 
 // Add ascending sort order
 func (sort *sort) Asc(fields ...string) error {
-	return ErrNotImplemented
+	for _, field := range fields {
+		sort.D = append(sort.D, bson.E{field, 1})
+	}
+	return nil
 }
 
 // Add descending sort order
 func (sort *sort) Desc(fields ...string) error {
-	return ErrNotImplemented
+	for _, field := range fields {
+		sort.D = append(sort.D, bson.E{field, -1})
+	}
+	return nil
 }
 
 // Limit the number of documents returned
 func (sort *sort) Limit(limit int64) error {
-	return ErrNotImplemented
+	if limit < 0 {
+		return ErrBadParameter.With("limit")
+	}
+	sort.limit = &limit
+	return nil
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// PRIVATE METHODS
+
+func sortdoc(s Sort) any {
+	if s == nil {
+		return bson.D{}
+	}
+	return s.(*sort).D
+}
+
+func sortlimit(s Sort) *int64 {
+	if s == nil {
+		return nil
+	} else {
+		return s.(*sort).limit
+	}
 }
