@@ -11,12 +11,20 @@ import (
 /////////////////////////////////////////////////////////////////////
 // TYPES
 
-// authtoken is a wrapper around a *Token which implements the AuthToken interface
+// authtoken is a wrapper around a *Token which implements the
+// AuthToken interface
 type authtoken struct {
 	t *Token
 }
 
 var _ AuthToken = (*authtoken)(nil)
+
+/////////////////////////////////////////////////////////////////////
+// LIEFCYCLE
+
+func NewAuthToken(t *Token) *authtoken {
+	return &authtoken{t}
+}
 
 /////////////////////////////////////////////////////////////////////
 // STRINGIFY
@@ -27,11 +35,6 @@ func (authtoken *authtoken) String() string {
 
 /////////////////////////////////////////////////////////////////////
 // PUBLIC METHODS
-
-func (authtoken *authtoken) Set(t *Token) AuthToken {
-	authtoken.t = t
-	return authtoken
-}
 
 // Return the name of the token
 func (authtoken *authtoken) Name() string {

@@ -131,7 +131,6 @@ func (auth *auth) List(ctx context.Context, fn func(AuthToken)) error {
 		return err
 	}
 	defer cursor.Close()
-	token := new(authtoken)
 	for {
 		t, err := cursor.Next(ctx)
 		if err == io.EOF {
@@ -139,7 +138,7 @@ func (auth *auth) List(ctx context.Context, fn func(AuthToken)) error {
 		} else if err != nil {
 			return err
 		} else {
-			fn(token.Set(t.(*Token)))
+			fn(NewAuthToken(t.(*Token)))
 		}
 	}
 }
