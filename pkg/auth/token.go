@@ -168,7 +168,7 @@ func (t *Token) MarshalJSON() ([]byte, error) {
 		buf.WriteRune(',')
 	}
 	if len(t.Scope) > 0 {
-		buf.WriteString(`"scopes":`)
+		buf.WriteString(`"scope":`)
 		if data, err := json.Marshal(t.Scope); err != nil {
 			return nil, err
 		} else {
@@ -177,7 +177,8 @@ func (t *Token) MarshalJSON() ([]byte, error) {
 		buf.WriteRune(',')
 	}
 
-	// Include the valid flag
+	// Include the valid flag - it's not part of the token, but helpful for
+	// serving to an API
 	buf.WriteString(`"valid":`)
 	buf.WriteString(strconv.FormatBool(t.IsValid()))
 
