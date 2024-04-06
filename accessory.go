@@ -44,7 +44,7 @@ type Conn interface {
 	// Ping the client, return an error if not reachable
 	Ping(context.Context) error
 
-	// Return a database object for a specific database
+	// Return a database object for a specific database name
 	Database(string) Database
 
 	// Return all existing databases on the server
@@ -55,10 +55,10 @@ type Conn interface {
 	Do(context.Context, func(context.Context) error) error
 
 	// Return a filter specification
-	F() Filter
+	//F() Filter
 
 	// Return a sort specification
-	S() Sort
+	//S() Sort
 }
 
 // Database represents a specific database on the server on which operations
