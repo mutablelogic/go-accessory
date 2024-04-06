@@ -88,7 +88,8 @@ func (database *database) Collection(doc any) Collection {
 	}
 
 	// Create a new collection
-	if collection := database.new_collection(v, database.schema); collection == nil {
+	ctx := context.Background()
+	if collection := database.new_collection(ctx, v, database.schema); collection == nil {
 		return nil
 	} else {
 		database.collection[v.Type()] = collection

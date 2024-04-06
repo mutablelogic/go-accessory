@@ -2,6 +2,7 @@ package pg
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 
 type SQType struct {
 	Name string
+	Size string
 	Ptr  bool
 }
 
@@ -68,14 +70,18 @@ func PGColumns(meta *meta.Collection) ([]any, error) {
 func PGColumn(field *meta.Field) (any, error) {
 	var decltype string
 
-	ty := PGType(field.Type)
-	if ty == nil {
-		return nil, ErrNotImplemented.Withf("Field %q of type %v not supported", field.Name, field.Type)
-	} else {
-		decltype = ty.Name
-	}
+	// Set decltype from type tag if it exists
 	if t := field.Get("type"); t != "" {
 		decltype = t
+	}
+
+	ty := PGType(field.Type)
+	if decltype == "" {
+		if ty == nil {
+			return nil, ErrNotImplemented.Withf("Field %q of type %v not supported", field.Name, field.Type)
+		} else {
+			decltype = ty.Name + ty.Size
+		}
 	}
 	if field.Name == primaryKeyName {
 		if field.Is("omitempty") {
@@ -88,7 +94,7 @@ func PGColumn(field *meta.Field) (any, error) {
 	}
 
 	col := N(field.Name).T(decltype)
-	if !field.Is("omitempty") && !ty.Ptr {
+	if !field.Is("omitempty") || (ty != nil && !ty.Ptr) {
 		col = col.NotNull()
 	}
 	if field.Is("unique") {
@@ -98,7 +104,7 @@ func PGColumn(field *meta.Field) (any, error) {
 		col = col.PrimaryKey()
 	}
 	if field.Name == primaryKeyName {
-		col = col.Default("uuid_generate_v1mc()")
+		col = col.Default("gen_random_uuid()")
 	}
 
 	// Return success
@@ -113,6 +119,8 @@ func PGType(t reflect.Type) *SQType {
 		t = t.Elem()
 		ptr = true
 	}
+
+	// Primitive types
 	switch t {
 	case intType:
 		return &SQType{Name: "INTEGER", Ptr: ptr}
@@ -129,6 +137,25 @@ func PGType(t reflect.Type) *SQType {
 	case timeType:
 		return &SQType{Name: "TIMESTAMP", Ptr: ptr}
 	}
+
+	// Check for array type
+	if t.Kind() == reflect.Array {
+		if ty := PGType(t.Elem()); ty != nil {
+			return &SQType{Name: ty.Name, Size: fmt.Sprintf("[%d]%s", t.Len(), ty.Size), Ptr: ptr}
+		} else {
+			return nil
+		}
+	}
+
+	// Check for slice type
+	if t.Kind() == reflect.Slice {
+		if ty := PGType(t.Elem()); ty != nil {
+			return &SQType{Name: ty.Name, Size: "[]" + ty.Size, Ptr: ptr}
+		} else {
+			return nil
+		}
+	}
+
 	// Type not currently supported
 	return nil
 }

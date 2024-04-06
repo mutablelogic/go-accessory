@@ -22,7 +22,7 @@ type Collection struct {
 
 // Extra is an interface which provides extra metadata for a collection
 type extra interface {
-	Name() string
+	CollectionName() string
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -45,8 +45,8 @@ func New(v reflect.Value, tag string) *Collection {
 
 	// If v is a collection, then set the name and schema
 	if extra, ok := v.Interface().(extra); ok {
-		if extra.Name() != "" {
-			r.Name = extra.Name()
+		if extra.CollectionName() != "" {
+			r.Name = extra.CollectionName()
 		}
 	}
 

@@ -2,6 +2,10 @@ package pg
 
 import (
 	"context"
+	"time"
+
+	// Package imports
+	trace "github.com/mutablelogic/go-accessory/pkg/trace"
 
 	// Namespace imports
 	. "github.com/mutablelogic/go-accessory/pkg/querybuilder"
@@ -28,7 +32,13 @@ func (c *conn) CreateSchema(ctx context.Context, name string, ifnotexists bool) 
 	if ifnotexists {
 		st = st.IfNotExists()
 	}
-	defer 
-	_, err := c.Conn.Exec(ctx, st.String())
-	return err
+
+	// Execute statement
+	defer trace.Do(trace.WithExec(ctx, st), c.tracefn, time.Now())
+	if _, err := c.Conn.Exec(ctx, st.String()); err != nil {
+		return err
+	}
+
+	// Return success
+	return nil
 }

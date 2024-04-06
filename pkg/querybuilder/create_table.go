@@ -5,6 +5,11 @@ N(...).CreateTable() is a factory method that returns a new create table struct:
 */
 package querybuilder
 
+import (
+	"fmt"
+	"reflect"
+)
+
 ///////////////////////////////////////////////////////////////////////////////
 // TYPES
 
@@ -34,6 +39,8 @@ func (n name) CreateTable(v ...any) createTable {
 			q.column = append(q.column, N(v).T(defaultType))
 		case name:
 			q.column = append(q.column, v.T(defaultType))
+		default:
+			panic("Invalid type: " + fmt.Sprint(reflect.TypeOf(v)))
 		}
 	}
 	return q

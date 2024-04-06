@@ -7,6 +7,7 @@ import (
 
 	// Package imports
 	meta "github.com/mutablelogic/go-accessory/pkg/meta"
+	trace "github.com/mutablelogic/go-accessory/pkg/trace"
 
 	// Namespace imports
 	. "github.com/djthorpe/go-errors"
@@ -36,14 +37,19 @@ const (
 
 // Create a new database object from a connection - the database should already
 // exist
-func (database *database) new_collection(r reflect.Value, schema string) *collection {
+func (database *database) new_collection(ctx context.Context, r reflect.Value, schema string) *collection {
 	meta := meta.New(r, tagName)
 	if meta == nil {
 		return nil
 	}
 
-	// TODO: Create the collection table
+	// Create the collection table
+	if err := database.conn.CreateTableWithSchema(ctx, meta, schema, true); err != nil {
+		trace.Err(ctx, database.conn.tracefn, err)
+		return nil
+	}
 
+	// Return the new collection
 	return NewCollection(meta, schema)
 }
 

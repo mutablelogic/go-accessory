@@ -59,7 +59,7 @@ func (c *conn) createTableWithSchemaEx(ctx context.Context, meta *meta.Collectio
 	}
 
 	// Create statement
-	st := N(meta.Name).WithSchema(schema).CreateTable(cols)
+	st := N(meta.Name).WithSchema(schema).CreateTable(cols...)
 	if ifnotexists {
 		st = st.IfNotExists()
 	}

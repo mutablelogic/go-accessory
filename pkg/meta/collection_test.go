@@ -18,7 +18,7 @@ const (
 type A struct{}
 type B struct{}
 
-func (B) Name() string {
+func (B) CollectionName() string {
 	return "b"
 }
 

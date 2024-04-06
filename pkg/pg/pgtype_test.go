@@ -14,13 +14,16 @@ import (
 )
 
 type R struct {
-	A string    `bson:"_id"`
-	B string    `bson:"b"`
-	C int       `bson:"c,omitempty,unique"`
-	D time.Time `bson:"d,omitempty"`
-	E int       `bson:"e,omitempty,type:numeric"`
-	F bool      `bson:"f"`
-	G *string   `bson:"g"`
+	A string       `bson:"_id"`
+	B string       `bson:"b"`
+	C int          `bson:"c,omitempty,unique"`
+	D time.Time    `bson:"d,omitempty"`
+	E int          `bson:"e,omitempty,type:numeric"`
+	F bool         `bson:"f"`
+	G *string      `bson:"g"`
+	H [3]string    `bson:"h"`
+	I []string     `bson:"i"`
+	J [3][4]string `bson:"j"`
 }
 
 func Test_Type_001(t *testing.T) {
