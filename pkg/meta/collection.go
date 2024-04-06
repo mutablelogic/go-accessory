@@ -73,3 +73,24 @@ func (c *Collection) String() string {
 	}
 	return str + ">"
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// PUBLIC METHODS
+
+// Value returns the value of a field in a data object, and whether it is zero-valued
+func (c *Collection) Value(field *Field, data any) (any, bool, error) {
+	// data object needs to be the same
+	v := reflect.ValueOf(data)
+	for v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct || v.Type() != c.Type {
+		return nil, false, fmt.Errorf("invalid data type: %v", v.Kind())
+	}
+
+	// Get the field by index
+	v = v.FieldByIndex(field.Index)
+
+	// Return the value
+	return v.Interface(), v.IsZero(), nil
+}

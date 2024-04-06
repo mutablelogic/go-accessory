@@ -29,6 +29,6 @@ func Test_Write_001(t *testing.T) {
 	assert.NotNil(meta)
 	err = c.(pg.Table).CreateTempTable(context.TODO(), meta)
 	assert.NoError(err)
-	err = c.(pg.Write).WriteInsert(context.TODO(), meta, Token{}, Token{}, Token{})
+	err = c.(pg.Write).WriteInsert(context.TODO(), meta, Token{Value: "test"})
 	assert.NoError(err)
 }

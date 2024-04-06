@@ -52,6 +52,22 @@ func Identifiers(v ...string) string {
 	return strings.Join(result, ",")
 }
 
+// Singles returns a list of single quoted strings,
+// separated by commas
+func Singles(v ...string) string {
+	if len(v) == 0 {
+		return ""
+	}
+	if len(v) == 1 {
+		return Single(v[0])
+	}
+	result := make([]string, len(v))
+	for i, v_ := range v {
+		result[i] = Single(v_)
+	}
+	return strings.Join(result, ",")
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 
