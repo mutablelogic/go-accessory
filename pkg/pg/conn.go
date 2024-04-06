@@ -166,27 +166,21 @@ func (conn *conn) Database(name string) Database {
 
 // Return all existing databases on the server
 func (conn *conn) Databases(ctx context.Context) ([]Database, error) {
-	conn.Mutex.Lock()
-	defer conn.Mutex.Unlock()
-
 	if conn.IsClosed() {
 		return nil, ErrOutOfOrder.With("connection closed")
-	} else if rows, err := conn.Query(ctx, "SELECT datname FROM pg_catalog.pg_database WHERE NOT datistemplate"); err != nil {
-		return nil, err
-	} else {
-		defer rows.Close()
-		var result []Database
-		for rows.Next() {
-			var name string
-			if err := rows.Scan(&name); err != nil {
-				return nil, err
-			}
-			if db := conn.Database(name); db != nil {
-				result = append(result, db)
-			}
-		}
-		return result, nil
 	}
+
+	var result []Database
+	databases, err := conn.databaseNames(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, name := range databases {
+		if db := conn.Database(name); db != nil {
+			result = append(result, db)
+		}
+	}
+	return result, nil
 }
 
 // Perform operations within a transaction. Rollback or apply
@@ -239,10 +233,14 @@ func (this *conn) Collection(proto any) Collection {
 	}
 }
 
-// Insert documents of the same type to the database. The document key is updated
-// if the document is writable.
-func (this *conn) Insert(context.Context, ...any) error {
-	return ErrNotImplemented
+// Insert documents of the same type to the database within a transaction.
+// The document keys are updated if the document is writable.
+func (this *conn) Insert(ctx context.Context, v ...any) error {
+	if db := this.Database(this.def); db == nil {
+		return ErrNotFound.With("database", this.def)
+	} else {
+		return db.Insert(ctx, v...)
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -253,4 +251,27 @@ func urlSet(u *url.URL, key, value string) *url.URL {
 	q.Set(key, value)
 	u.RawQuery = q.Encode()
 	return u
+}
+
+func (c *conn) databaseNames(ctx context.Context) ([]string, error) {
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
+
+	rows, err := c.Query(ctx, "SELECT datname FROM pg_catalog.pg_database WHERE NOT datistemplate")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Collect database names
+	var result []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		} else {
+			result = append(result, name)
+		}
+	}
+	return result, nil
 }

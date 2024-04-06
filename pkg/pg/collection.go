@@ -37,13 +37,21 @@ const (
 // Create a new database object from a connection - the database should already
 // exist
 func (database *database) new_collection(r reflect.Value, schema string) *collection {
-	if meta := meta.New(r, tagName); meta == nil {
+	meta := meta.New(r, tagName)
+	if meta == nil {
 		return nil
-	} else {
-		return &collection{
-			Meta:   meta,
-			Schema: schema,
-		}
+	}
+
+	// TODO: Create the collection table
+
+	return NewCollection(meta, schema)
+}
+
+// Create a new collection object from a meta object
+func NewCollection(meta *meta.Collection, schema string) *collection {
+	return &collection{
+		Meta:   meta,
+		Schema: schema,
 	}
 }
 
@@ -53,7 +61,9 @@ func (database *database) new_collection(r reflect.Value, schema string) *collec
 func (c *collection) String() string {
 	str := "<pg.collection"
 	str += fmt.Sprintf(" name=%q", c.Meta.Name)
-	str += fmt.Sprintf(" schema=%q", c.Schema)
+	if c.Schema != "" {
+		str += fmt.Sprintf(" schema=%q", c.Schema)
+	}
 	return str + ">"
 }
 

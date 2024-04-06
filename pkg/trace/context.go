@@ -83,6 +83,14 @@ func DumpContextStr(ctx context.Context) string {
 	return str + ">"
 }
 
+// Return the current tx
+func Tx(ctx context.Context) uint64 {
+	if tx, ok := ctx.Value(ctxTx).(uint64); ok {
+		return tx
+	}
+	return 0
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 

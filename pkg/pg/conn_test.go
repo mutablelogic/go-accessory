@@ -17,7 +17,7 @@ const (
 	PG_URL = "${PG_URL}"
 )
 
-func Test_Client_001(t *testing.T) {
+func Test_Conn_001(t *testing.T) {
 	assert := assert.New(t)
 	c, err := pg.Open(context.TODO(), uri(t), tracefn(t), pg.OptApplicationName(t.Name()))
 	assert.NoError(err)
@@ -28,7 +28,7 @@ func Test_Client_001(t *testing.T) {
 	}()
 }
 
-func Test_Client_002(t *testing.T) {
+func Test_Conn_002(t *testing.T) {
 	assert := assert.New(t)
 	c, err := pg.Open(context.TODO(), uri(t), tracefn(t), pg.OptApplicationName(t.Name()))
 	assert.NoError(err)
@@ -45,7 +45,7 @@ func Test_Client_002(t *testing.T) {
 	assert.NoError(c.Ping(context.Background()))
 }
 
-func Test_Client_003(t *testing.T) {
+func Test_Conn_003(t *testing.T) {
 	assert := assert.New(t)
 	c, err := pg.Open(context.TODO(), uri(t), tracefn(t), pg.OptApplicationName(t.Name()))
 	assert.NoError(err)

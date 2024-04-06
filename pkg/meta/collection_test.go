@@ -28,6 +28,11 @@ type C struct {
 	C string `json:"-"`
 }
 
+type D struct {
+	C
+	E string `json:"e"`
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 func Test_Reflect_001(t *testing.T) {
@@ -67,5 +72,17 @@ func Test_Reflect_005(t *testing.T) {
 	assert.Len(r.Attr, 2)
 	assert.Equal("a", r.Attr[0].Name)
 	assert.Equal("b", r.Attr[1].Name)
+	t.Log(r)
+}
+
+func Test_Reflect_006(t *testing.T) {
+	assert := assert.New(t)
+	r := meta.New(reflect.ValueOf(D{}), "json")
+	assert.NotNil(r)
+	assert.Equal("D", r.Name)
+	assert.Len(r.Attr, 3)
+	assert.Equal("a", r.Attr[0].Name)
+	assert.Equal("b", r.Attr[1].Name)
+	assert.Equal("e", r.Attr[1].Name)
 	t.Log(r)
 }
