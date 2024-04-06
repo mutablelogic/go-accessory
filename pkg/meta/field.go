@@ -10,24 +10,23 @@ import (
 ///////////////////////////////////////////////////////////////////////////////
 // TYPES
 
-// Attr is a struct field attribute mapped to a collection field
-type Attr struct {
-	Type     reflect.Type
-	Name     string
-	Index    []int
-	Tags     []string
-	Children []*Attr
+// Field is a struct field attribute mapped to a collection field
+type Field struct {
+	Type  reflect.Type
+	Name  string
+	Index []int
+	Tags  []string
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // LIFECYCLE
 
-func NewAttr(index []int, field reflect.StructField, tag string) *Attr {
+func NewField(index []int, field reflect.StructField, tag string) *Field {
 	tags := tagValue(field, tag)
 	if len(tags) == 0 {
 		return nil
 	}
-	return &Attr{
+	return &Field{
 		Name:  tags[0],
 		Type:  field.Type,
 		Tags:  tags[1:],
@@ -38,8 +37,8 @@ func NewAttr(index []int, field reflect.StructField, tag string) *Attr {
 ///////////////////////////////////////////////////////////////////////////////
 // STRINGIFY
 
-func (self *Attr) String() string {
-	str := "<attr"
+func (self *Field) String() string {
+	str := "<field"
 	str += fmt.Sprintf(" type=%q", self.Type)
 	str += fmt.Sprintf(" name=%q", self.Name)
 	if self.Index != nil {
@@ -48,10 +47,32 @@ func (self *Attr) String() string {
 	if len(self.Tags) > 0 {
 		str += fmt.Sprintf(" tags=%q", self.Tags)
 	}
-	if len(self.Children) > 0 {
-		str += fmt.Sprintf(" children=%v", self.Children)
-	}
 	return str + ">"
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// PUBLIC METHODS
+
+// Is returns true if the attribute has the specified tag
+func (attr *Field) Is(tag string) bool {
+	for _, t := range attr.Tags {
+		if t == tag {
+			return true
+		} else if strings.HasPrefix(t, tag+":") {
+			return true
+		}
+	}
+	return false
+}
+
+// Get returns the value of a specific tag
+func (attr *Field) Get(tagname string) string {
+	for _, tag := range attr.Tags {
+		if strings.HasPrefix(tag, tagname+":") {
+			return tag[len(tagname)+1:]
+		}
+	}
+	return ""
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -79,7 +100,7 @@ func tagValue(field reflect.StructField, tagName string) []string {
 
 // attrForStruct recursively enumerates the fields of a struct and returns
 // an array of attributes
-func attrForStruct(index []int, t reflect.Type, tag string) []*Attr {
+func attrForStruct(index []int, t reflect.Type, tag string) []*Field {
 	// t should be struct
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
@@ -89,9 +110,9 @@ func attrForStruct(index []int, t reflect.Type, tag string) []*Attr {
 	}
 
 	// Iterate over fields
-	var attrs = []*Attr{}
+	var attrs = []*Field{}
 	for _, field := range reflect.VisibleFields(t) {
-		attr := NewAttr(index, field, tag)
+		attr := NewField(index, field, tag)
 		if attr == nil {
 			continue
 		}

@@ -69,9 +69,9 @@ func Test_Reflect_005(t *testing.T) {
 	r := meta.New(reflect.ValueOf(C{}), "json")
 	assert.NotNil(r)
 	assert.Equal("C", r.Name)
-	assert.Len(r.Attr, 2)
-	assert.Equal("a", r.Attr[0].Name)
-	assert.Equal("b", r.Attr[1].Name)
+	assert.Len(r.Fields, 2)
+	assert.Equal("a", r.Fields[0].Name)
+	assert.Equal("b", r.Fields[1].Name)
 	t.Log(r)
 }
 
@@ -80,9 +80,9 @@ func Test_Reflect_006(t *testing.T) {
 	r := meta.New(reflect.ValueOf(D{}), "json")
 	assert.NotNil(r)
 	assert.Equal("D", r.Name)
-	assert.Len(r.Attr, 3)
-	assert.Equal("a", r.Attr[0].Name)
-	assert.Equal("b", r.Attr[1].Name)
-	assert.Equal("e", r.Attr[1].Name)
+	assert.Len(r.Fields, 3)
+	assert.Equal("a", r.Fields[0].Name)
+	assert.Equal("b", r.Fields[1].Name)
+	assert.Equal("e", r.Fields[2].Name)
 	t.Log(r)
 }

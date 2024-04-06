@@ -15,6 +15,7 @@ const (
 	OpPing
 	OpCommit
 	OpRollback
+	OpExec
 	OpInsert
 	OpInsertMany
 	OpDelete
@@ -41,6 +42,8 @@ func (o Op) String() string {
 		return "Disconnect"
 	case OpPing:
 		return "Ping"
+	case OpExec:
+		return "Exec"
 	case OpInsert:
 		return "Insert"
 	case OpInsertMany:

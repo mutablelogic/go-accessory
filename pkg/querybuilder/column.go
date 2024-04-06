@@ -16,6 +16,7 @@ import "strings"
 type column struct {
 	name
 	decltype string
+	def      string
 	flags
 }
 
@@ -47,9 +48,19 @@ func (q column) PrimaryKey() column {
 	return q
 }
 
+// The default value on insert
+func (q column) Default(v any) column {
+	q.def = join("DEFAULT", v)
+	return q
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // STRINGIFY
 
 func (q column) String() string {
-	return join(q.name.SchemaName(), q.decltype, (q.flags & notnull), (q.flags & unique), (q.flags & primarykey))
+	// Remove NOT NULL if PRIMARY KEY (implied)
+	if q.flags.Is(primarykey) {
+		q.flags ^= notnull
+	}
+	return join(q.name.SchemaName(), q.decltype, (q.flags & notnull), (q.flags & unique), (q.flags & primarykey), q.def)
 }

@@ -23,14 +23,20 @@ type colOp struct {
 	matched, modified    int64
 }
 
+type execOp struct {
+	Op
+	statement string
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 
 const (
-	ctxCol ctxKey = iota // Collection operation (update, find, ...)
-	ctxUrl               // URL operation (connect, disconnect and ping)
-	ctxTx                // Transaction number
-	ctxOp                // Operation (insert, update, delete, find, ...)
+	ctxCol  ctxKey = iota // Collection operation (update, find, ...)
+	ctxUrl                // URL operation (connect, disconnect and ping)
+	ctxTx                 // Transaction number
+	ctxOp                 // Operation (insert, update, delete, find, ...)
+	ctxExec               // Exec operation (exec, query, ...
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -46,6 +52,10 @@ func WithUrl(parent context.Context, op Op, url *url.URL) context.Context {
 
 func WithTx(parent context.Context) context.Context {
 	return context.WithValue(parent, ctxTx, nextTx())
+}
+
+func WithExec(parent context.Context, exec any) context.Context {
+	return context.WithValue(parent, ctxExec, execOp{OpExec, fmt.Sprint(exec)})
 }
 
 // Return a new context which contains matched and modified placeholders
@@ -64,6 +74,9 @@ func DumpContextStr(ctx context.Context) string {
 	}
 	if url, ok := ctx.Value(ctxUrl).(urlOp); ok {
 		str += fmt.Sprintf(" op=%v url=%q", url.Op, url.url)
+	}
+	if exec, ok := ctx.Value(ctxExec).(execOp); ok {
+		str += fmt.Sprintf(" op=%v statement=%q", exec.Op, exec.statement)
 	}
 	if col, ok := ctx.Value(ctxCol).(*colOp); ok {
 		str += fmt.Sprintf(" op=%v", col.Op)

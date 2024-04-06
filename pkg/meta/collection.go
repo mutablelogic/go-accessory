@@ -16,8 +16,8 @@ type Collection struct {
 	// Collection name
 	Name string
 
-	// Attributes
-	Attr []*Attr
+	// Fields
+	Fields []*Field
 }
 
 // Extra is an interface which provides extra metadata for a collection
@@ -51,10 +51,10 @@ func New(v reflect.Value, tag string) *Collection {
 	}
 
 	// Enumerate atrributes
-	if attr := attrForStruct(nil, r.Type, tag); attr == nil {
+	if fields := attrForStruct(nil, r.Type, tag); fields == nil {
 		return nil
 	} else {
-		r.Attr = attr
+		r.Fields = fields
 	}
 
 	// Return success
@@ -68,8 +68,8 @@ func (c *Collection) String() string {
 	str := "<collection"
 	str += fmt.Sprintf(" type=%q", c.Type)
 	str += fmt.Sprintf(" name=%q", c.Name)
-	if len(c.Attr) > 0 {
-		str += fmt.Sprintf(" attrs=%v", c.Attr)
+	if len(c.Fields) > 0 {
+		str += fmt.Sprintf(" fields=%v", c.Fields)
 	}
 	return str + ">"
 }

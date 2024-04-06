@@ -3,6 +3,7 @@ package pg
 import (
 	"context"
 
+	// Namespace imports
 	. "github.com/mutablelogic/go-accessory/pkg/querybuilder"
 )
 
@@ -27,6 +28,7 @@ func (c *conn) CreateSchema(ctx context.Context, name string, ifnotexists bool) 
 	if ifnotexists {
 		st = st.IfNotExists()
 	}
+	defer 
 	_, err := c.Conn.Exec(ctx, st.String())
 	return err
 }
