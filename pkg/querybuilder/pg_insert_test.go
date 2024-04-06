@@ -14,18 +14,16 @@ import (
 	_ "github.com/mutablelogic/go-accessory/pkg/pg"
 )
 
-func Test_PG_Name_000(t *testing.T) {
+func Test_PG_Insert_000(t *testing.T) {
 	assert := assert.New(t)
 	tests := []struct {
 		In       any
 		Expected string
 	}{
-		{N("a"), `a`},
-		{N("a").As("b"), `a AS b`},
-		{N("a").WithSchema("main"), `main.a`},
-		{N("a").WithSchema("main").As("b"), `main.a AS b`},
-		{N("x y").WithSchema("main").As("b"), `main."x y" AS b`},
-		{N("insert").WithSchema("main").As("b"), `main."insert" AS b`},
+		{N("a").Insert(), `INSERT INTO a DEFAULT VALUES`},
+		{N("a").As("b").Insert(), `INSERT INTO a AS b DEFAULT VALUES`},
+		{N("a").WithSchema("public").Insert(), `INSERT INTO public.a DEFAULT VALUES`},
+		{N("a").Insert("a", "b", "c"), `INSERT INTO a ('a', 'b', 'c') VALUES ($1, $2, $3)`},
 	}
 	for _, test := range tests {
 		assert.Equal(test.Expected, fmt.Sprint(test.In))

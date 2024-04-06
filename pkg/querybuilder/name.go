@@ -47,7 +47,7 @@ func (n name) As(v string) name {
 // STRINGIFY
 
 // String returns all elements quoted
-func (n *name) String() string {
+func (n name) String() string {
 	str := n.SchemaName()
 	if n.alias != "" {
 		str += " AS " + quote.Identifier(n.alias)
@@ -56,7 +56,7 @@ func (n *name) String() string {
 }
 
 // SchemaName returns the quoted name of the table with optional schema component
-func (n *name) SchemaName() string {
+func (n name) SchemaName() string {
 	str := quote.Identifier(n.name)
 	if n.schema != "" {
 		str = quote.Identifier(n.schema) + "." + str
@@ -65,6 +65,6 @@ func (n *name) SchemaName() string {
 }
 
 // Name returns the quoted name component only
-func (n *name) Name() string {
+func (n name) Name() string {
 	return quote.Identifier(n.name)
 }
