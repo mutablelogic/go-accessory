@@ -94,7 +94,7 @@ func PGColumn(field *meta.Field) (any, error) {
 	}
 
 	col := N(field.Name).T(decltype)
-	if !field.Is("omitempty") || (ty != nil && !ty.Ptr) {
+	if !field.Is("omitempty") && (ty != nil && !ty.Ptr) {
 		col = col.NotNull()
 	}
 	if field.Is("unique") {
@@ -105,6 +105,11 @@ func PGColumn(field *meta.Field) (any, error) {
 	}
 	if field.Name == primaryKeyName {
 		col = col.Default("gen_random_uuid()")
+	}
+
+	// Set default
+	if v := field.Get("default"); v != "" {
+		col = col.Default(v)
 	}
 
 	// Return success

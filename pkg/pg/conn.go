@@ -166,7 +166,7 @@ func (conn *conn) Database(name string) Database {
 
 // Return all existing databases on the server
 func (conn *conn) Databases(ctx context.Context) ([]Database, error) {
-	if conn.IsClosed() {
+	if conn.Conn.IsClosed() {
 		return nil, ErrOutOfOrder.With("connection closed")
 	}
 
