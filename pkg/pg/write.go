@@ -10,6 +10,7 @@ import (
 	trace "github.com/mutablelogic/go-accessory/pkg/trace"
 
 	// Namespace imports
+	. "github.com/djthorpe/go-errors"
 	. "github.com/mutablelogic/go-accessory/pkg/querybuilder"
 )
 
@@ -32,6 +33,12 @@ type Write interface {
 	// WriteUpdateWithSchema will update a row in the database, based on the primary key values
 	// being set in the data. The metadata type and the data must be compatible.
 	WriteUpdateWithSchema(context.Context, *meta.Collection, string, any) error
+
+	// Delete will delete a row in the database, based on the primary key values
+	WriteDelete(context.Context, *meta.Collection, any) error
+
+	// DeleteWithSchema will delete a row in the database, based on the primary key values
+	WriteDeleteWithSchema(context.Context, *meta.Collection, string, any) error
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -76,4 +83,20 @@ func (c *conn) WriteInsertWithSchema(ctx context.Context, meta *meta.Collection,
 
 	// Return success
 	return nil
+}
+
+func (c *conn) WriteUpdate(ctx context.Context, meta *meta.Collection, data any) error {
+	return c.WriteUpdateWithSchema(ctx, meta, "", data)
+}
+
+func (c *conn) WriteUpdateWithSchema(ctx context.Context, meta *meta.Collection, schema string, data any) error {
+	return ErrNotImplemented
+}
+
+func (c *conn) WriteDelete(ctx context.Context, meta *meta.Collection, data any) error {
+	return c.WriteDeleteWithSchema(ctx, meta, "", data)
+}
+
+func (c *conn) WriteDeleteWithSchema(ctx context.Context, meta *meta.Collection, schema string, data any) error {
+	return ErrNotImplemented
 }

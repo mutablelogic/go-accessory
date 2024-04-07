@@ -18,6 +18,9 @@ type Collection struct {
 
 	// Fields
 	Fields []*Field
+
+	// Primary Key Fields
+	PrimaryKey []*Field
 }
 
 // Extra is an interface which provides extra metadata for a collection
