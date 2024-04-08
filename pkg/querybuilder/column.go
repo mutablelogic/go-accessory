@@ -5,10 +5,17 @@ N(...).T(string) is a factory method that returns a new column, or a specified t
 	N("col").T("type").NotNull() => "col TEXT NOT NULL"
 	N("col").T("type").Unique() => "col TEXT UNIQUE"
 	N("col").T("type").PrimaryKey() => "col TEXT PRIMARY KEY"
+	N("col").T("type").Foreign("other_table") => "col TEXT REFERENCES other_table"
+	N("col").T("type").Foreign("other_table","a") => "col TEXT REFERENCES other_table (a)"
 */
 package querybuilder
 
-import "strings"
+import (
+	"strings"
+
+	// Package imports
+	quote "github.com/mutablelogic/go-accessory/pkg/querybuilder/quote"
+)
 
 ///////////////////////////////////////////////////////////////////////////////
 // TYPES
@@ -17,6 +24,7 @@ type column struct {
 	name
 	decltype string
 	def      string
+	key      any
 	flags
 }
 
@@ -36,21 +44,28 @@ func (q column) NotNull() column {
 	return q
 }
 
-// Indicate that the column must be unique
+// Indicate that the column has a unique constraint
 func (q column) Unique() column {
-	q.flags |= unique
+	q.key = Key().Unique()
 	return q
 }
 
-// Indicate that the column is part of the primary key
+// Indicate that the column has a primary key constraint
 func (q column) PrimaryKey() column {
+	q.key = Key()
 	q.flags |= primarykey
+	return q
+}
+
+// Indicate that the column has a foreign key constraint
+func (q column) Foreign(name string, column ...string) column {
+	q.key = Key().Foreign(name, column...)
 	return q
 }
 
 // The default value on insert
 func (q column) Default(v any) column {
-	q.def = join("DEFAULT", v)
+	q.def = quote.Join("DEFAULT", v)
 	return q
 }
 
@@ -62,5 +77,5 @@ func (q column) String() string {
 	if q.flags.Is(primarykey) {
 		q.flags &= ^notnull
 	}
-	return join(q.name.SchemaName(), q.decltype, (q.flags & notnull), (q.flags & unique), (q.flags & primarykey), q.def)
+	return quote.Join(q.name.SchemaName(), q.decltype, q.key, q.def)
 }

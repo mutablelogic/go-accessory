@@ -14,10 +14,13 @@ func Join(v ...any) string {
 }
 
 // JoinSep returns a string that is the concatenation of the arguments, separated by
-// a separator. If any argument evaluates to an empty string, it is ignored
+// a separator. If any argument is nil or evaluates to an empty string, it is ignored
 func JoinSep(sep string, v ...any) string {
 	str := ""
 	for _, v := range v {
+		if v == nil {
+			continue
+		}
 		part := fmt.Sprint(v)
 		if part != "" {
 			if str != "" {

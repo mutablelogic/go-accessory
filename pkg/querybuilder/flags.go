@@ -12,10 +12,15 @@ const (
 	temporary flags = 1 << iota
 	unlogged
 	ifNotExists
+	ifExists
 	notnull
-	unique
-	primarykey
 	distinct
+	uniquekey
+	primarykey
+	foreignkey
+	cascade
+	restrict
+	noAction
 )
 
 //////////////////////////////////////////////////////////////////////////////
@@ -42,14 +47,29 @@ func (f flags) String() string {
 	if f.Is(ifNotExists) {
 		str += "IF NOT EXISTS "
 	}
+	if f.Is(ifExists) {
+		str += "IF EXISTS "
+	}
 	if f.Is(notnull) {
 		str += "NOT NULL "
 	}
-	if f.Is(unique) {
+	if f.Is(uniquekey) {
 		str += "UNIQUE "
 	}
 	if f.Is(primarykey) {
 		str += "PRIMARY KEY "
+	}
+	if f.Is(foreignkey) {
+		str += "FOREIGN KEY "
+	}
+	if f.Is(cascade) {
+		str += "CASCADE "
+	}
+	if f.Is(restrict) {
+		str += "RESTRICT "
+	}
+	if f.Is(noAction) {
+		str += "NO ACTION "
 	}
 	if str == "" {
 		return ""
