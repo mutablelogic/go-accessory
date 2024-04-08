@@ -147,11 +147,14 @@ type Filter interface {
 // Sort represents a sort specification for a query
 type Sort interface {
 	// Add ascending sort order fields
-	Asc(...string) error
+	Asc(...string) Sort
 
 	// Add descending sort order fields
-	Desc(...string) error
+	Desc(...string) Sort
 
 	// Limit the number of documents returned
-	Limit(int64) error
+	Limit(uint64) Sort
+
+	// Offset within the documents returned
+	Offset(uint64) Sort
 }
