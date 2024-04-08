@@ -17,13 +17,13 @@ import (
 // INTERFACES
 
 type Table interface {
-	// CreateTable creates a table in the current database. If the second
+	// CreateTable creates a table in the current database. If the third
 	// argument is true, then the table is only created if it doesn't already
-	// exist. The third argument contains the
+	// exist. The table is created with the default schema.
 	CreateTable(context.Context, *meta.Collection, bool) error
 
 	// CreateTableWithSchema creates a table in the current database with the
-	// named schema. If the third argument is true, then the table is only
+	// named schema. If the fourth argument is true, then the table is only
 	// created if it doesn't already exist.
 	CreateTableWithSchema(context.Context, *meta.Collection, string, bool) error
 
