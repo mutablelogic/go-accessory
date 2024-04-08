@@ -25,6 +25,7 @@ type column struct {
 	decltype string
 	def      string
 	key      any
+	nokey    bool
 	flags
 }
 
@@ -72,10 +73,19 @@ func (q column) Default(v any) column {
 ///////////////////////////////////////////////////////////////////////////////
 // STRINGIFY
 
+func (q column) keyStr() string {
+	if q.key == nil || q.nokey {
+		return ""
+	} else {
+		return quote.Join(q.key)
+	}
+}
+
 func (q column) String() string {
 	// Remove NOT NULL if PRIMARY KEY (implied)
-	if q.flags.Is(primarykey) {
-		q.flags &= ^notnull
+	flags := q.flags
+	if flags.Is(primarykey) {
+		flags &= ^notnull
 	}
-	return quote.Join(q.name.SchemaName(), q.decltype, q.key, q.def)
+	return quote.Join(q.name.SchemaName(), q.decltype, q.keyStr(), flags&notnull, q.def)
 }

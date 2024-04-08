@@ -19,7 +19,7 @@ import (
 type createTable struct {
 	flags
 	name
-	column []any
+	column []column
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -70,9 +70,39 @@ func (q createTable) Unlogged() createTable {
 	return q
 }
 
+// Return primary key constraint, or nil
+func (q createTable) PrimaryKey() any {
+	result := make([]string, 0, len(q.column))
+	for _, v := range q.column {
+		if v.flags.Is(primarykey) {
+			result = append(result, v.name.name)
+		}
+	}
+	if len(result) > 1 {
+		return Key(result...)
+	} else {
+		return nil
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // STRINGIFY
 
+func (q createTable) columnKeyStr() string {
+	// Super hacky code so that key phrase is not included if PK is defined
+	// which means the PK is composed of more than one column
+	pk := q.PrimaryKey()
+	cols := make([]any, 0, len(q.column))
+	for i, v := range q.column {
+		v2 := v
+		cols = append(cols, &v2)
+		if pk != nil {
+			cols[i].(*column).nokey = true
+		}
+	}
+	return quote.JoinSep(",", quote.JoinSep(",", cols...), pk)
+}
+
 func (q createTable) String() string {
-	return quote.Join("CREATE", (q.flags & (temporary | unlogged)), "TABLE", (q.flags & ifNotExists), q.name.SchemaName(), "("+quote.JoinSep(",", q.column...)+")")
+	return quote.Join("CREATE", (q.flags & (temporary | unlogged)), "TABLE", (q.flags & ifNotExists), q.name.SchemaName(), "("+q.columnKeyStr()+")")
 }
