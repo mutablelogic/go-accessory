@@ -95,9 +95,9 @@ func (q insertTable) returns() string {
 
 func (q insertTable) String() string {
 	if len(q.column) == 0 {
-		return join("INSERT INTO", q.name.String(), "DEFAULT VALUES")
+		return quote.Join("INSERT INTO", q.name.String(), "DEFAULT VALUES")
 	} else if len(q.values) == 0 {
-		return join("INSERT INTO", q.name.String(), "("+names(q.column)+")", "VALUES", "("+q.placeholders()+")", q.returns())
+		return quote.Join("INSERT INTO", q.name.String(), "("+names(q.column)+")", "VALUES", "("+q.placeholders()+")", q.returns())
 	} else {
 		return "TODO"
 	}

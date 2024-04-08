@@ -6,6 +6,8 @@ N(...).CreateSchema() is a factory method that returns a new create schema struc
 */
 package querybuilder
 
+import quote "github.com/mutablelogic/go-accessory/pkg/querybuilder/quote"
+
 ///////////////////////////////////////////////////////////////////////////////
 // TYPES
 
@@ -34,5 +36,5 @@ func (q createSchema) IfNotExists() createSchema {
 // STRINGIFY
 
 func (q createSchema) String() string {
-	return join("CREATE SCHEMA", (q.flags & ifNotExists), q.name.Name())
+	return quote.Join("CREATE SCHEMA", (q.flags & ifNotExists), q.name.Name())
 }
