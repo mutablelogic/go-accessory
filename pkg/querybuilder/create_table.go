@@ -8,6 +8,9 @@ package querybuilder
 import (
 	"fmt"
 	"reflect"
+
+	// Package imports
+	quote "github.com/mutablelogic/go-accessory/pkg/querybuilder/quote"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -71,5 +74,5 @@ func (q createTable) Unlogged() createTable {
 // STRINGIFY
 
 func (q createTable) String() string {
-	return join("CREATE", (q.flags & temporary), (q.flags & unlogged), "TABLE", (q.flags & ifNotExists), q.name.SchemaName(), "("+joinsep(",", q.column...)+")")
+	return quote.Join("CREATE", (q.flags & temporary), (q.flags & unlogged), "TABLE", (q.flags & ifNotExists), q.name.SchemaName(), "("+quote.JoinSep(",", q.column...)+")")
 }

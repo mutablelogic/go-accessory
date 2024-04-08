@@ -60,7 +60,7 @@ func (q column) Default(v any) column {
 func (q column) String() string {
 	// Remove NOT NULL if PRIMARY KEY (implied)
 	if q.flags.Is(primarykey) {
-		q.flags ^= notnull
+		q.flags &= ^notnull
 	}
 	return join(q.name.SchemaName(), q.decltype, (q.flags & notnull), (q.flags & unique), (q.flags & primarykey), q.def)
 }

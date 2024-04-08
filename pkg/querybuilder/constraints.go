@@ -38,7 +38,7 @@ func ForeignKey(v ...any) foreignKey {
 // STRINGIFY
 
 func (q foreignKey) String() string {
-	if len(q.columns) == 0 && q.name == "" && len(q.foreign) == 0 {
+	if len(q.columns) == 0 && q.name.name == "" && len(q.foreign) == 0 {
 		return ""
 	}
 	return "FOREIGN KEY " + join(q.columns...) + " REFERENCES " + join(q.foreign...)

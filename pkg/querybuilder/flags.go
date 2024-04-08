@@ -15,6 +15,7 @@ const (
 	notnull
 	unique
 	primarykey
+	distinct
 )
 
 //////////////////////////////////////////////////////////////////////////////
@@ -29,6 +30,9 @@ func (f flags) Is(v flags) bool {
 
 func (f flags) String() string {
 	str := ""
+	if f.Is(distinct) {
+		str += "DISTINCT "
+	}
 	if f.Is(temporary) {
 		str += "TEMPORARY "
 	}
