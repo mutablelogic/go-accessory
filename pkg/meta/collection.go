@@ -60,6 +60,13 @@ func New(v reflect.Value, tag string) *Collection {
 		r.Fields = fields
 	}
 
+	// Create primary keys
+	for _, field := range r.Fields {
+		if field.IsPrimaryKey() {
+			r.PrimaryKey = append(r.PrimaryKey, field)
+		}
+	}
+
 	// Return success
 	return r
 }
@@ -73,6 +80,9 @@ func (c *Collection) String() string {
 	str += fmt.Sprintf(" name=%q", c.Name)
 	if len(c.Fields) > 0 {
 		str += fmt.Sprintf(" fields=%v", c.Fields)
+	}
+	if len(c.PrimaryKey) > 0 {
+		str += fmt.Sprintf(" pk=%v", c.PrimaryKey)
 	}
 	return str + ">"
 }

@@ -75,6 +75,11 @@ func (attr *Field) Get(tagname string) string {
 	return ""
 }
 
+// IsPrimaryKey returns true if the attribute is a primary key
+func (attr *Field) IsPrimaryKey() bool {
+	return attr.Is("primarykey") || attr.Is("primary") || attr.Is("pri")
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 
