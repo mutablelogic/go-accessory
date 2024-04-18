@@ -63,7 +63,12 @@ var (
 	numberPrefix = &unicode.RangeTable{
 		R16: []unicode.Range16{
 			{Lo: 0x002B, Hi: 0x002B, Stride: 1}, // +
-			{Lo: 0x002D, Hi: 0x002E, Stride: 1}, // - .
+			{Lo: 0x002D, Hi: 0x002D, Stride: 1}, // -
+		},
+	}
+	punkt = &unicode.RangeTable{
+		R16: []unicode.Range16{
+			{Lo: 0x002E, Hi: 0x002E, Stride: 1}, // !-/
 		},
 	}
 )
@@ -93,6 +98,9 @@ func (s *Scanner) Tokens() ([]*Token, error) {
 		} else if tok.Kind == EOF {
 			break
 		}
+
+		fmt.Println("   TOKEN ", tok)
+
 		result = append(result, tok)
 	}
 	// Return tokens
@@ -122,6 +130,7 @@ func (s *Scanner) Peak() *Token {
 	}
 	// Consume a token, add it to the buffer and return it
 	token := s.next()
+
 	s.buf = append(s.buf, token)
 	return token
 }
@@ -154,7 +163,7 @@ func (s *Scanner) next() *Token {
 	} else if unicode.IsLetter(ch) {
 		s.unread()
 		return s.scanIdent()
-	} else if unicode.IsDigit(ch) || unicode.Is(numberPrefix, ch) {
+	} else if unicode.IsDigit(ch) || unicode.Is(numberPrefix, ch) || unicode.Is(punkt, ch) {
 		s.unread()
 		return s.scanNumber()
 	} else if ch == '"' {
@@ -296,19 +305,23 @@ func (s *Scanner) scanNumber() *Token {
 FOR_LOOP:
 	for {
 		ch := s.read()
+		fmt.Printf("   kind=%v ch=%q buf=%q remaining=%v\n", kind, string(ch), buf.String(), s.r.Buffered())
 		switch {
 		case ch == eof:
 			// EOF will cause the loop to exit
 			break FOR_LOOP
-		case kind == NumberInteger && ch == '.':
-			// Switch to float
+		case kind == NumberInteger && unicode.Is(punkt, ch):
+			// .<something>
+			// <integer>.<something>
 			kind = NumberFloat
-		case kind == NumberInteger && unicode.Is(numberPrefix, ch):
-			if buf.Len() > 0 {
-				// Plus, Minus or Punkt is not at the beginning of the number
-				s.unread()
-				break FOR_LOOP
-			}
+		case kind == NumberInteger && unicode.Is(numberPrefix, ch) && buf.Len() > 0:
+			// integer+<something>
+			// integer-<something>
+			s.unread()
+			break FOR_LOOP
+		case kind == NumberInteger && unicode.Is(numberPrefix, ch) && buf.Len() == 0:
+			// +<something>
+			// -<something>
 		case kind == NumberInteger && unicode.IsDigit(ch):
 			// Switch to octal if first digit is zero
 			if buf.String() == "0" || buf.String() == "-0" || buf.String() == "+0" {
@@ -361,23 +374,22 @@ FOR_LOOP:
 		_, _ = buf.WriteRune(ch)
 	}
 
+	fmt.Printf("   kind=%v buf=%q remaining=%d\n", kind, buf.String(), s.r.Buffered())
+
 	// Error - no digits
 	if buf.Len() == 0 {
 		return nil
 	}
 
-	// Error when Float ends on an E
+	// Error when Float ends on an e
 	if kind == NumberFloat && buf.String()[buf.Len()-1] == 'e' || buf.String()[buf.Len()-1] == 'E' {
 		return nil
 	}
-
-	fmt.Printf("   kind=%v buf=%q remaining=%d\n", kind, buf.String(), s.r.Buffered())
 
 	// If number prefix on it's own, then return as a regular ident
 	if buf.Len() == 1 {
 		ch := rune(buf.String()[0])
 		if kind, exists := tokenKindMap[ch]; exists {
-			fmt.Println("   returning ", kind, "buf=", buf.String())
 			return NewToken(kind, buf.String(), s.pos)
 		}
 	}

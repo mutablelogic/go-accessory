@@ -107,14 +107,17 @@ func Test_Scanner_003(t *testing.T) {
 		{"+0b1001001", "NumberBinary"},
 		{".", "Punkt"},
 		{"+", "Plus"},
+		{"+ +", "Plus Space Plus"},
 		{"-", "Minus"},
 		{"++", "Plus Plus"},
 		{"--", "Minus Minus"},
+		{"++ --", "Plus Plus Space Minus Minus"},
 		{"e", "Ident"},
 		{"ee", "Ident"},
 		{"e++", "Ident Plus Plus"},
 		{"e+-", "Ident Plus Minus"},
 		{".+", "Punkt Plus"},
+		{".+ .-", "Punkt Plus Space Punkt Minus"},
 		{".+-", "Punkt Plus Minus"},
 		{"-.", "Minus Punkt"},
 		{"-..", "Minus Punkt Punkt"},
@@ -180,6 +183,25 @@ func Test_Scanner_005(t *testing.T) {
 	}{
 		{"# Hash comment #", "Comment"},
 		{"# Hash comment\n # Another comment", "Comment Space Comment"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.in, func(t *testing.T) {
+			assert := assert.New(t)
+			tokens, err := NewScanner(strings.NewReader(test.in), Pos{}, HashComments).Tokens()
+			assert.NoError(err)
+			assert.NotNil(tokens)
+			assert.Equal(test.out, toTokenString(tokens))
+		})
+	}
+}
+
+func Test_Scanner_006(t *testing.T) {
+	// Non-error cases - comments
+	tests := []struct {
+		in  string
+		out string
+	}{
 		{"// Line comment", "Comment"},
 		{"//// Line comment", "Comment"},
 		{"/ / // Line comment", "Slash Space Slash Space Comment"},
@@ -192,7 +214,7 @@ func Test_Scanner_005(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.in, func(t *testing.T) {
 			assert := assert.New(t)
-			tokens, err := NewScanner(strings.NewReader(test.in), Pos{}, HashComments|LineComments|BlockComments).Tokens()
+			tokens, err := NewScanner(strings.NewReader(test.in), Pos{}, LineComments).Tokens()
 			assert.NoError(err)
 			assert.NotNil(tokens)
 			assert.Equal(test.out, toTokenString(tokens))
@@ -200,7 +222,29 @@ func Test_Scanner_005(t *testing.T) {
 	}
 }
 
-func Test_Scanner_006(t *testing.T) {
+func Test_Scanner_007(t *testing.T) {
+	// Non-error cases - comments
+	tests := []struct {
+		in  string
+		out string
+	}{
+		{"-- Line comment", "Comment"},
+		{"---- Line comment", "Comment"},
+		{"/ -- Line comment", "Slash Space Comment"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.in, func(t *testing.T) {
+			assert := assert.New(t)
+			tokens, err := NewScanner(strings.NewReader(test.in), Pos{}, SQLComments).Tokens()
+			assert.NoError(err)
+			assert.NotNil(tokens)
+			assert.Equal(test.out, toTokenString(tokens))
+		})
+	}
+}
+
+func Test_Scanner_009(t *testing.T) {
 	// Non-error cases - unary operators
 	tests := []struct {
 		in  string
